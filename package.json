@@ -1,0 +1,48 @@
+{
+  "name": "react-slate-wysiwyg",
+  "version": "1.0.0",
+  "description": "This is a wysiwyg editor with Slate js in React",
+  "main": "index.js",
+  "scripts": {
+    "start": "react-scripts start",
+    "copycss": "mkdir dist/cjs/styles && mkdir dist/esm/styles && cp src/styles/index.css dist/cjs/styles/ && cp src/styles/index.css dist/esm/styles/",
+    "build": "rm -rf dist/ && prettier --write src/ && npm run build:esm && npm run build:cjs && npm run copycss",
+    "build:esm": "tsc",
+    "build:cjs": "tsc --module CommonJS --outDir dist/cjs",
+    "pub": "npm publish --access public",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HudsonHawk88/react-slate-wysiwyg.git"
+  },
+  "keywords": [
+    "wysiwyg",
+    "react"
+  ],
+  "author": "Tóth Gergő",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/HudsonHawk88/react-slate-wysiwyg/issues"
+  },
+  "homepage": "https://github.com/HudsonHawk88/react-slate-wysiwyg#readme",
+  "dependencies": {
+    "bootstrap": "5.2.2",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "reactstrap": "9.1.5",
+    "slate-react": "^0.83.2",
+    "typescript": "4.6.4"
+  },
+  "devDependencies": {
+    "@babel/cli": "7.17.10",
+    "@types/bootstrap": "5.1.11",
+    "@types/prop-types": "15.7.5",
+    "@types/react": "18.0.24",
+    "@types/react-dom": "18.0.3",
+    "prettier": "2.7.1",
+    "ts-loader": "9.4.1",
+    "typescript": "4.8.4"
+  }
+}
