@@ -1,8 +1,8 @@
 {
-  "name": "react-slate-wysiwyg",
-  "version": "1.0.0",
+  "name": "@inftechsol/react-slate-wysiwyg",
+  "version": "1.0.2",
   "description": "This is a wysiwyg editor with Slate js in React",
-  "main": "index.js",
+  "main": "src/index.ts",
   "scripts": {
     "start": "react-scripts start",
     "build": "rm -rf dist/ && prettier --write src/ && npm run build:esm && npm run build:cjs",
