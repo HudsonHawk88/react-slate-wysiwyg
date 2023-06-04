@@ -5,14 +5,19 @@
   "main": "index.js",
   "scripts": {
     "start": "react-scripts start",
-    "copycss": "cp -R src/styles/ dist/cjs/ && cp -R src/styles/ dist/esm/",
-    "build": "rm -rf dist/ && prettier --write src/ && npm run build:esm && npm run build:cjs && npm run copycss",
+    "build": "rm -rf dist/ && prettier --write src/ && npm run build:esm && npm run build:cjs",
     "build:esm": "tsc",
     "build:cjs": "tsc --module CommonJS --outDir dist/cjs",
+    "build-rollup": "webpack --mode production --config webpack.config.js",
+    "watch": "rollup -c -w",
     "pub": "npm publish --access public",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
+  "types": "./dist/my-library.d.ts",
+  "files": [
+    "dist"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/HudsonHawk88/react-slate-wysiwyg.git"
@@ -28,17 +33,33 @@
   },
   "dependencies": {
     "@emotion/css": "^11.10.5",
+    "@popperjs/core": "^2.11.6",
     "bootstrap": "5.2.2",
+    "css-loader": "^6.7.3",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.5.0",
     "image-extensions": "^1.1.0",
     "is-url": "^1.2.4",
+    "node-sass": "^7.0.3",
+    "raw-loader": "^4.0.2",
     "react": "18.2.0",
     "reactstrap": "9.1.5",
+    "sass-loader": "^13.2.0",
     "slate-history": "^0.66.0",
+    "slate-hyperscript": "^0.77.0",
     "slate-react": "^0.83.2",
-    "typescript": "4.6.4"
+    "style-loader": "^3.3.1",
+    "typescript-plugin-css-modules": "^4.1.1",
+    "url-loader": "^4.1.1",
+    "webpack": "^5.75.0",
+    "webpack-dev-server": "^4.11.1"
   },
   "devDependencies": {
     "@babel/cli": "7.17.10",
+    "@rollup/plugin-babel": "^6.0.3",
+    "@rollup/plugin-commonjs": "^24.0.1",
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-typescript": "^11.0.0",
     "@types/bootstrap": "^5.1.11",
     "@types/escape-html": "^1.0.2",
     "@types/is-url": "^1.2.30",
@@ -48,8 +69,14 @@
     "prettier": "2.7.1",
     "react-dom": "^18.2.0",
     "react-scripts": "^5.0.1",
-    "ts-loader": "9.4.1",
-    "typescript": "4.8.4"
+    "rollup": "^2.79.1",
+    "rollup-plugin-scss": "^3.0.0",
+    "rollup-plugin-terser": "^7.0.2",
+    "sass": "^1.58.3",
+    "ts-loader": "^9.4.1",
+    "tsc-hooks": "^1.1.1",
+    "typescript": "^4.8.4",
+    "webpack-cli": "^5.0.1"
   },
   "browserslist": {
     "production": [

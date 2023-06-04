@@ -1,16 +1,23 @@
 import React, { Ref, PropsWithChildren } from 'react';
 import ReactDOM from 'react-dom';
 import { cx, css } from '@emotion/css';
-import '../styles/font-awesome.min.css';
 
 interface BaseProps {
     className: string;
     [key: string]: any;
 }
 
+interface HtmlAttributesWithButtonIcons extends React.HTMLAttributes<HTMLElement> {
+    buttonIcons: string[];
+}
+
 type RefButtonObject = Ref<HTMLButtonElement>;
 
 type RefDivObject = Ref<HTMLDivElement>;
+
+export const CustomToolbar = React.forwardRef(({ className, ...props }: PropsWithChildren<BaseProps>, ref: RefDivObject) => {
+    return <Menu {...props} ref={ref} className={className} />;
+});
 
 export const ToolbarButton = React.forwardRef(
     (
@@ -23,19 +30,18 @@ export const ToolbarButton = React.forwardRef(
         }: PropsWithChildren<
             {
                 active: boolean;
-                reversed: boolean;
+                reversed?: boolean;
             } & BaseProps
         >,
         ref: RefButtonObject
     ) => {
         if (props && props.name && props.name.format === 'fontSizeButton') {
-            return (
-                <>{props.children}</>
-            );
+            return <>{props.children}</>;
         } else {
             if (colors) {
                 return (
                     <button
+                        type="button"
                         {...props}
                         ref={ref}
                         className={cx(
@@ -50,6 +56,7 @@ export const ToolbarButton = React.forwardRef(
             } else {
                 return (
                     <button
+                        type="button"
                         {...props}
                         ref={ref}
                         className={cx(
@@ -122,7 +129,26 @@ export const EditorValue = React.forwardRef(
     }
 );
 
-export const Icon = React.forwardRef(({ className, ...props }: PropsWithChildren<BaseProps>, ref: RefDivObject) => <i {...props} ref={ref} className={className} />);
+const iconButton = ({ buttonIcons, ...rest }: HtmlAttributesWithButtonIcons, ref: RefDivObject) => {
+    return (
+        <React.Fragment>
+            {buttonIcons.map((icon: string) => {
+                return <i {...rest} ref={ref} key={icon} className={icon} />;
+            })}
+        </React.Fragment>
+    );
+};
+
+/* export const Icon = React.forwardRef(({ props }: StyledTextareaInputProps, ref: RefDivObject) => {
+    console.log(props);
+    props.buttonIcons.map((icon: string) => {
+        return (
+            <i {...props} ref={ref} className={icon} />
+        );
+    })
+}); */
+
+export const Icon = React.forwardRef(iconButton);
 
 export const Instruction = React.forwardRef(({ className, ...props }: PropsWithChildren<BaseProps>, ref: RefDivObject) => <div {...props} ref={ref} className={className} />);
 
