@@ -544,7 +544,6 @@ export const Wysiwyg = ({
     };
 
     const renderCustomButtons = () => {
-        console.log(customButtons);
         return (
             customButtons.length > 0 &&
             customButtons.map((button: any) => {
