@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
-import { createEditor, Transforms, Editor, Element as SlateElement, Text, Range, Point, Descendant } from 'slate';
+import { createEditor, Transforms, Editor, Element as SlateElement, Text, Range, Point, Descendant, BaseEditor } from 'slate';
 import { Slate, Editable, withReact, ReactEditor, useSlate, useFocused, useSelected, useSlateStatic } from 'slate-react';
 import { withHistory } from 'slate-history';
 import isUrl from 'is-url';
@@ -32,17 +32,17 @@ export type CustomText = {
     align?: string;
 };
 
-export interface CustomReactEditor extends ReactEditor {
+/* export interface CustomReactEditor extends ReactEditor {
     type: string;
     isElementReadOnly: Function;
     isSelectable: Function;
-}
+} */
 
 declare module 'slate' {
     interface CustomTypes {
-        Editor: CustomReactEditor;
-        Text: CustomText;
+        Editor: BaseEditor & ReactEditor;
         Element: CustomElement;
+        Text: CustomText;
     }
 }
 
