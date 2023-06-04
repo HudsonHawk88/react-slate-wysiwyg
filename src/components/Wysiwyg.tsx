@@ -52,7 +52,7 @@ interface WysiwygProps {
     className?: string;
     id?: string | undefined;
     value: CustomElement[];
-    onChange: VoidFunction;
+    onChange: Function;
     customButtons?: Array<[]>;
     colors?: Object;
     reserved?: Boolean;
@@ -1124,6 +1124,7 @@ export const Wysiwyg = ({
     };
 
     const [editor] = useState(() => withInlines(withTables(withImages(withHistory(withReact(createEditor()))))));
+    const [v, setV] = useState(initialValue);
     /*     const [editor] = useState(() => withReact(createEditor())); */
     const [fontSize, setFontSize] = useState('17px');
     const [imageModal, setImageModal] = useState(false);
@@ -2125,7 +2126,14 @@ export const Wysiwyg = ({
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
-            <Slate editor={editor} onChange={onChange} value={value}>
+            <Slate
+                editor={editor}
+                onChange={(value) => {
+                    onChange(value);
+                    setV(v);
+                }}
+                value={v}
+            >
                 <Toolbar className="wysiwyg-editor-toolbar">
                     <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
                     <MarkButton format="italic" icon="fa fa-italic" colors={colors} />
