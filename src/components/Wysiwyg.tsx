@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -9,7 +9,7 @@ import isUrl from 'is-url';
 import imageExtensions from 'image-extensions';
 import { css } from '@emotion/css';
 /* import escapeHtml from 'escape-html'; */
-import { Toolbar, ToolbarButton, Icon } from './Components';
+import { Toolbar, ToolbarButton, Icon } from './components';
 
 /* import 'bootstrap/dist/css/bootstrap.min.css'; */
 /* import '../styles/font-awesome.min.css';
