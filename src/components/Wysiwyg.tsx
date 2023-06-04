@@ -1123,7 +1123,7 @@ export const Wysiwyg = ({
         CTAFunc: ''
     };
 
-    const editor = useMemo(() => withInlines(withTables(withImages(withHistory(withReact(createEditor()))))), []);
+    const editor = useMemo(() => withInlines(withTables(withImages(withHistory(withReact(createEditor()))))), [value]);
     /*     const [editor] = useState(() => withReact(createEditor())); */
     const [fontSize, setFontSize] = useState('17px');
     const [imageModal, setImageModal] = useState(false);
