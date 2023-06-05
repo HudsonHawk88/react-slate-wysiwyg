@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -52,8 +52,9 @@ interface WysiwygProps {
     className?: string;
     key?: string;
     id?: string | undefined;
+    initialValue: CustomElement[];
     value: CustomElement[];
-    onChange: VoidFunction;
+    onChange: Function;
     customButtons?: Array<[]>;
     colors?: Object;
     reserved?: Boolean;
@@ -1141,7 +1142,7 @@ export const Wysiwyg = ({
     ];
     const [images] = useState(i);
 
-    const useForceUpdate = () => {
+    /*  const useForceUpdate = () => {
         const [, setState] = useState<number>(0);
 
         const forceUpdate = useCallback(() => {
@@ -1155,7 +1156,7 @@ export const Wysiwyg = ({
     useEffect(() => {
         editor.children = value;
         forceUpdate();
-    }, [editor, value, forceUpdate]);
+    }, [editor, value, forceUpdate]); */
 
     const toggleImageModal = (format?: any) => {
         setImageModal(!imageModal);
@@ -2141,7 +2142,15 @@ export const Wysiwyg = ({
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
-            <Slate editor={editor} onChange={onChange} value={value}>
+            <Slate
+                editor={editor}
+                onChange={(value) => {
+                    onChange(value);
+                    editor.children = value;
+                    editor.onChange();
+                }}
+                value={value}
+            >
                 <Toolbar className="wysiwyg-editor-toolbar">
                     <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
                     <MarkButton format="italic" icon="fa fa-italic" colors={colors} />
