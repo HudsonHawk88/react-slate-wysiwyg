@@ -383,7 +383,7 @@ const getNode = (node: any, ch?: any) => {
             Object.assign(style, { textDecoration: 'none' });
             const href = node.url;
             const text = node.linkText;
-            return `<a style="${style}" href=${href} target="_blank">${text}</a>`;
+            return `<a style="${style}" href="${href}" target="_blank">${text}</a>`;
         }
 
         case 'button': {
