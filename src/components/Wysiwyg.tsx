@@ -136,7 +136,7 @@ const defaultColors = {
     }
 };
 
-const defaultStyle = { border: '1px black solid' };
+const defaultStyle = { border: '1px black solid', padding: '10px' };
 
 const defaultImage: Image = {
     src: '',
@@ -1121,7 +1121,6 @@ export const Wysiwyg = ({
     const [image, setImage] = useState(defaultImage);
     const [format, setFormat] = useState('');
     const [modalValues, setModalvalues] = useState(defaultModalValues);
-    const [val, setVal] = useState(initialValue);
     const i = [
         { id: 0, src: 'https://igyteljesazelet.hu/sites/default/files/styles/widescreen/public/2021-01/cicatestbesz2.jpg?itok=q7vFnOSX', alt: 'cica2' },
         { id: 1, src: 'https://behir.hu/web/content/media/2021/06/cica-600x338.jpg', alt: 'cica1' }
@@ -1145,7 +1144,7 @@ export const Wysiwyg = ({
     }, [editor, value, forceUpdate]); */
 
     useEffect(() => {
-        setVal(value);
+        editor.children = value;
     }, [value]);
 
     const toggleImageModal = (format?: any) => {
@@ -2137,7 +2136,7 @@ export const Wysiwyg = ({
                 onChange={(v) => {
                     onChange(v);
                 }}
-                value={val}
+                value={value}
             >
                 <Toolbar className="wysiwyg-editor-toolbar">
                     <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
