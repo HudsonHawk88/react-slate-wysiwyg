@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo, useEffect } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -1131,9 +1131,9 @@ export const Wysiwyg = ({
         forceUpdate();
     }, [editor, value, forceUpdate]); */
 
-    useEffect(() => {
+    /* useEffect(() => {
         editor.children = value;
-    }, [value]);
+    }, [value]); */
 
     const toggleImageModal = (format?: any) => {
         setImageModal(!imageModal);
