@@ -2134,10 +2134,8 @@ export const Wysiwyg = ({
         <div style={{ display: 'inline-grid', width: '100%' }}>
             <Slate
                 editor={editor}
-                onChange={(value) => {
-                    onChange(value);
-                    editor.children = value;
-                    /*                     editor.onChange(); */
+                onChange={(v) => {
+                    onChange(v);
                 }}
                 value={val}
             >
