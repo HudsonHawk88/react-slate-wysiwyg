@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -1141,6 +1141,22 @@ export const Wysiwyg = ({
     ];
     const [images] = useState(i);
 
+    const useForceUpdate = () => {
+        const [, setState] = useState<number>(0);
+
+        const forceUpdate = useCallback(() => {
+            setState((n) => n + 1);
+        }, []);
+
+        return forceUpdate;
+    };
+
+    const forceUpdate = useForceUpdate();
+    useEffect(() => {
+        editor.children = value;
+        forceUpdate();
+    }, [editor, value, forceUpdate]);
+
     const toggleImageModal = (format?: any) => {
         setImageModal(!imageModal);
         setImage(images[0]);
@@ -2125,7 +2141,7 @@ export const Wysiwyg = ({
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
-            <Slate editor={editor} onChange={onChange} value={value} key={JSON.stringify(value)}>
+            <Slate editor={editor} onChange={onChange} value={value}>
                 <Toolbar className="wysiwyg-editor-toolbar">
                     <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
                     <MarkButton format="italic" icon="fa fa-italic" colors={colors} />
