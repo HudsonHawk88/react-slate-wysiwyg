@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -1124,7 +1124,7 @@ export const Wysiwyg = ({
         CTAFunc: ''
     };
 
-    const editor = useMemo(() => withInlines(withTables(withImages(withHistory(withReact(createEditor()))))), [value]);
+    const [editor] = useState(() => withInlines(withTables(withImages(withHistory(withReact(createEditor()))))));
     /*     const [editor] = useState(() => withReact(createEditor())); */
     const [fontSize, setFontSize] = useState('17px');
     const [imageModal, setImageModal] = useState(false);
@@ -1236,9 +1236,9 @@ export const Wysiwyg = ({
         );
     };
 
-    const renderLeaf = useCallback((props: any) => <Leaf {...props} />, [fontSize]);
+    const renderLeaf = (props: any) => <Leaf {...props} />;
 
-    const renderElement = useCallback((props: any) => {
+    const renderElement = (props: any) => {
         let style = props.element.children.style || {};
         const { attributes, element, children } = props;
         const selected = useSelected();
@@ -1624,7 +1624,7 @@ export const Wysiwyg = ({
                 }
             }
         }
-    }, []);
+    };
 
     const renderImageModal = () => {
         return (
@@ -2139,11 +2139,6 @@ export const Wysiwyg = ({
             </ToolbarButton>
         );
     };
-
-    useEffect(() => {
-        editor.children = value;
-        editor.onChange();
-    }, [value]);
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
