@@ -2,13 +2,12 @@ import React, { useCallback, useState, useMemo, useEffect } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
-import { createEditor, Transforms, Editor, Element as SlateElement, Text, Range, BaseText, BaseElement } from 'slate';
+import { createEditor, Transforms, Editor, Element as SlateElement, Text, Range, Point, BaseText, BaseElement } from 'slate';
 import { Slate, Editable, withReact, ReactEditor, useSlate, useFocused, useSelected, useSlateStatic } from 'slate-react';
 import { withHistory } from 'slate-history';
-/* import isUrl from 'is-url';
-import imageExtensions from 'image-extensions'; */
+import isUrl from 'is-url';
+/* import imageExtensions from 'image-extensions'; */
 import { css } from '@emotion/css';
-/* import escapeHtml from 'escape-html'; */
 import { Toolbar, ToolbarButton, Icon } from './components';
 
 /* import 'bootstrap/dist/css/bootstrap.min.css'; */
@@ -39,28 +38,19 @@ export interface CustomText extends BaseText {
     children?: any;
 }
 
-/* export interface CustomEditor extends BaseText {
-    bold?: boolean | undefined;
-    italic?: boolean | undefined;
-    underline?: boolean | undefined;
-    code?: boolean | undefined;
-    style?: object | undefined;
-    align?: string;
-    children?: any;
+/* export interface CustomEditor extends ReactEditor {
+    insertData: VoidFunction,
+    insertTextData: Function,
+    insertFragmentData: Function,
+    setFragmentData: Function,
+    hasRange: Function,
+    children: any;
 }; */
 
 /* export interface CustomReactEditor extends ReactEditor {
     type: string;
     isElementReadOnly: Function;
     isSelectable: Function;
-} */
-
-/* declare module 'slate' {
-    interface CustomTypes {
-        Editor: BaseEditor & ReactEditor;
-        Element: CustomElement;
-        Text: CustomText;
-    }
 } */
 
 type onUploadType = (file: File) => void;
@@ -71,7 +61,7 @@ interface WysiwygProps {
     id?: string | undefined;
     initialValue: CustomElement[];
     value: CustomElement[];
-    onChange: Function;
+    onChange: VoidFunction;
     customButtons?: Array<[]>;
     colors?: Object;
     reserved?: Boolean;
@@ -676,8 +666,8 @@ export const Wysiwyg = ({
         toggleTableModal();
     };
 
-    /*     const withInlines = (editor: Editor) => {
-        const { insertText, isInline, isElementReadOnly, isSelectable } = editor;
+    const withInlines = (editor: ReactEditor) => {
+        const { insertData, insertText, isInline, isElementReadOnly, isSelectable } = editor;
 
         editor.isInline = (element: any) => ['link', 'button', 'badge'].includes(element.type) || isInline(element);
 
@@ -704,7 +694,7 @@ export const Wysiwyg = ({
         };
 
         return editor;
-    }; */
+    };
 
     const insertLink = (editor: Editor, url: string, text: string, color: string) => {
         if (editor.selection) {
@@ -1015,7 +1005,7 @@ export const Wysiwyg = ({
         return imageExtensions.includes(ext);
     }; */
 
-    /*    const withTables = (editor: Editor) => {
+    const withTables = (editor: Editor) => {
         const { deleteBackward, deleteForward, insertBreak } = editor;
 
         editor.deleteBackward = (unit) => {
@@ -1077,19 +1067,17 @@ export const Wysiwyg = ({
         };
 
         return editor;
-    }; */
+    };
 
-    /* const withImages = (editor: Editor) => {
+    const withImages = (editor: Editor) => {
         const { isVoid } = editor;
 
         editor.isVoid = (element: any) => {
             return element.type === 'image' || element.type === 'image-center' || element.type === 'image-right' || element.type === 'image-left' ? true : isVoid(element);
         };
 
-       
-
         return editor;
-    }; */
+    };
 
     const defaultModalValues = {
         tableClass: 'wysiwyg-table',
@@ -1108,7 +1096,7 @@ export const Wysiwyg = ({
         CTAFunc: ''
     };
 
-    const editor: ReactEditor = useMemo(() => withHistory(withReact(createEditor())), []);
+    const editor: any = useMemo(() => withImages(withTables(withInlines(withHistory(withReact(createEditor()))))), []);
 
     /*     const [editor] = useState(() => withReact(createEditor())); */
     const [fontSize, setFontSize] = useState('17px');
@@ -2131,13 +2119,7 @@ export const Wysiwyg = ({
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
-            <Slate
-                editor={editor}
-                onChange={(v) => {
-                    onChange(v);
-                }}
-                value={value}
-            >
+            <Slate editor={editor} onChange={onChange} value={value}>
                 <Toolbar className="wysiwyg-editor-toolbar">
                     <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
                     <MarkButton format="italic" icon="fa fa-italic" colors={colors} />
