@@ -50,9 +50,10 @@ type onUploadType = (file: File) => void;
 
 interface WysiwygProps {
     className?: string;
+    key?: string;
     id?: string | undefined;
     value: CustomElement[];
-    onChange: Function;
+    onChange: VoidFunction;
     customButtons?: Array<[]>;
     colors?: Object;
     reserved?: Boolean;
@@ -2124,7 +2125,7 @@ export const Wysiwyg = ({
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
-            <Slate editor={editor} onChange={(value) => onChange(value)} value={value}>
+            <Slate editor={editor} onChange={onChange} value={value} key={JSON.stringify(value)}>
                 <Toolbar className="wysiwyg-editor-toolbar">
                     <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
                     <MarkButton format="italic" icon="fa fa-italic" colors={colors} />
