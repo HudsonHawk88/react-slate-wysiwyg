@@ -1,6 +1,6 @@
 {
   "name": "@inftechsol/react-slate-wysiwyg",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "This is a wysiwyg editor with Slate js in React",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",

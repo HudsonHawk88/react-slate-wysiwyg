@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useState, useMemo, useEffect } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -1109,6 +1109,7 @@ export const Wysiwyg = ({
     };
 
     const editor: ReactEditor = useMemo(() => withHistory(withReact(createEditor())), []);
+
     /*     const [editor] = useState(() => withReact(createEditor())); */
     const [fontSize, setFontSize] = useState('17px');
     const [imageModal, setImageModal] = useState(false);
@@ -1120,6 +1121,7 @@ export const Wysiwyg = ({
     const [image, setImage] = useState(defaultImage);
     const [format, setFormat] = useState('');
     const [modalValues, setModalvalues] = useState(defaultModalValues);
+    const [val, setVal] = useState(initialValue);
     const i = [
         { id: 0, src: 'https://igyteljesazelet.hu/sites/default/files/styles/widescreen/public/2021-01/cicatestbesz2.jpg?itok=q7vFnOSX', alt: 'cica2' },
         { id: 1, src: 'https://behir.hu/web/content/media/2021/06/cica-600x338.jpg', alt: 'cica1' }
@@ -1141,6 +1143,10 @@ export const Wysiwyg = ({
         editor.children = value;
         forceUpdate();
     }, [editor, value, forceUpdate]); */
+
+    useEffect(() => {
+        setVal(value);
+    }, [value]);
 
     const toggleImageModal = (format?: any) => {
         setImageModal(!imageModal);
@@ -2133,7 +2139,7 @@ export const Wysiwyg = ({
                     editor.children = value;
                     /*                     editor.onChange(); */
                 }}
-                value={value}
+                value={val}
             >
                 <Toolbar className="wysiwyg-editor-toolbar">
                     <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
