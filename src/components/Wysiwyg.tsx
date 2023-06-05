@@ -2147,7 +2147,7 @@ export const Wysiwyg = ({
                 onChange={(value) => {
                     onChange(value);
                     editor.children = value;
-                    editor.onChange();
+                    /*                     editor.onChange(); */
                 }}
                 value={value}
             >
