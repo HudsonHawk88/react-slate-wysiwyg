@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -1122,7 +1122,7 @@ export const Wysiwyg = ({
         CTAFunc: ''
     };
 
-    const editor = useMemo(() => withInlines(withTables(withImages(withHistory(withReact(createEditor()))))), []);
+    const [editor] = useState(() => withInlines(withTables(withImages(withHistory(withReact(createEditor()))))));
     /*     const [editor] = useState(() => withReact(createEditor())); */
     const [fontSize, setFontSize] = useState('17px');
     const [imageModal, setImageModal] = useState(false);
