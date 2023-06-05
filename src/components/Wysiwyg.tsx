@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -2139,6 +2139,11 @@ export const Wysiwyg = ({
             </ToolbarButton>
         );
     };
+
+    useEffect(() => {
+        editor.children = value;
+        editor.onChange();
+    }, [value]);
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
