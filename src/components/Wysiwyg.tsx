@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -1122,7 +1122,7 @@ export const Wysiwyg = ({
         CTAFunc: ''
     };
 
-    const [editor] = useState(() => withInlines(withTables(withImages(withHistory(withReact(createEditor()))))));
+    const editor = useMemo(() => withInlines(withTables(withImages(withHistory(withReact(createEditor()))))), [value]);
     /*     const [editor] = useState(() => withReact(createEditor())); */
     const [fontSize, setFontSize] = useState('17px');
     const [imageModal, setImageModal] = useState(false);
@@ -2124,7 +2124,7 @@ export const Wysiwyg = ({
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
-            <Slate editor={editor} onChange={(value) => onChange(value)} value={value} key={JSON.stringify(value)}>
+            <Slate editor={editor} onChange={(value) => onChange(value)} value={value}>
                 <Toolbar className="wysiwyg-editor-toolbar">
                     <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
                     <MarkButton format="italic" icon="fa fa-italic" colors={colors} />
