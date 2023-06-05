@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
-import { createEditor, Transforms, Editor, Element as SlateElement, Text, Range, Point, Descendant, BaseEditor } from 'slate';
+import { createEditor, Transforms, Editor, Element as SlateElement, Text, Range, BaseText, BaseElement } from 'slate';
 import { Slate, Editable, withReact, ReactEditor, useSlate, useFocused, useSelected, useSlateStatic } from 'slate-react';
 import { withHistory } from 'slate-history';
-import isUrl from 'is-url';
-import imageExtensions from 'image-extensions';
+/* import isUrl from 'is-url';
+import imageExtensions from 'image-extensions'; */
 import { css } from '@emotion/css';
 /* import escapeHtml from 'escape-html'; */
 import { Toolbar, ToolbarButton, Icon } from './components';
@@ -17,20 +17,37 @@ import '../styles/index.css'; */
 
 // INTERFACES AND TYPES
 
-export type CustomElement = { type: string; className?: string; align?: string; style?: object; children?: CustomText[] | CustomElement[] | Descendant[] };
+export interface CustomElement extends BaseElement {
+    type?: string;
+    className?: string;
+    align?: string;
+    style?: object;
+    children: CustomElement[] | CustomText[];
+}
 export type CustomImage = { type: string; url: string; children?: EmptyText[] };
-export type LinkElement = { type: string; url: string; style?: object; linkText?: string; children: CustomText[] };
+export type LinkElement = { type: string; url: string; style?: object; linkText?: string; children: CustomText[] | CustomElement[] | any };
 export type YoutubeElement = { type: string; youtubeUrl: string; height: string | number; width: string | number; children: CustomText[]; style: object };
 export type ButtonElement = { type: string; CTAFunc?: string; CTAColor?: string; CTABgColor?: string; CTALeiras: string; style?: object; color?: string; bgColor?: string; children?: LinkElement[] };
-export type CustomText = {
-    text?: string;
+export interface CustomText extends BaseText {
+    type?: string;
     bold?: boolean | undefined;
     italic?: boolean | undefined;
     underline?: boolean | undefined;
     code?: boolean | undefined;
     style?: object | undefined;
     align?: string;
-};
+    children?: any;
+}
+
+/* export interface CustomEditor extends BaseText {
+    bold?: boolean | undefined;
+    italic?: boolean | undefined;
+    underline?: boolean | undefined;
+    code?: boolean | undefined;
+    style?: object | undefined;
+    align?: string;
+    children?: any;
+}; */
 
 /* export interface CustomReactEditor extends ReactEditor {
     type: string;
@@ -38,13 +55,13 @@ export type CustomText = {
     isSelectable: Function;
 } */
 
-declare module 'slate' {
+/* declare module 'slate' {
     interface CustomTypes {
         Editor: BaseEditor & ReactEditor;
         Element: CustomElement;
         Text: CustomText;
     }
-}
+} */
 
 type onUploadType = (file: File) => void;
 
@@ -89,16 +106,21 @@ export type EmptyText = {
 export type ImageElement = {
     type: string;
     src: string | ArrayBuffer;
-    children?: EmptyText[] | CustomText[] | CustomElement[];
+    children?: EmptyText[] | CustomText[] | CustomElement[] | any;
     style: object | undefined;
 };
 
 // DEFAULT VALUES
 
+/* export interface CustomValue extends Descendant {
+    type?: string;
+    children?: CustomElement[]
+    style?: object | string
+} */
+
 export const initialValue: CustomElement[] = [
     {
         type: 'align-left',
-        align: 'left',
         children: [{ text: '', style: { fontSize: '17px' } }]
     }
 ];
@@ -399,7 +421,7 @@ export const serialize = (nodes: CustomElement[]) => {
     let result = nodes.map((node: any): string[] => {
         const children =
             node.children &&
-            node.children.map((nn: any) => {
+            node.children.map((nn: CustomText): any => {
                 if (Text.isText(nn)) {
                     let string = escapeHtml(nn.text);
                     if (nn.bold) {
@@ -416,7 +438,7 @@ export const serialize = (nodes: CustomElement[]) => {
                     }
                     return string;
                 } else {
-                    const ch = getNode(nn, nn.children);
+                    const ch = getNode(nn, nn['children']);
                     return ch;
                 }
             });
@@ -600,7 +622,7 @@ export const Wysiwyg = ({
                     clear: 'both'
                 };
             }
-            const img: ImageElement = { type: format, style: style, src: image.src, children: [text] };
+            const img: any = { type: format, style: style, src: image.src, children: [text] };
             /*   const d: CustomElement = { type: 'div', style: divStyle, children: [img] }; */
             Transforms.insertNodes(editor, img);
             /*   Transforms.wrapNodes(editor, d); */
@@ -611,7 +633,7 @@ export const Wysiwyg = ({
                     margin: '0 auto'
                 };
             }
-            const img: ImageElement = { type: format, style: style, src: image.src, children: [text] };
+            const img: any = { type: format, style: style, src: image.src, children: [text] };
 
             Transforms.insertNodes(editor, img);
         }
@@ -654,10 +676,10 @@ export const Wysiwyg = ({
         toggleTableModal();
     };
 
-    const withInlines = (editor: Editor) => {
-        const { insertData, insertText, isInline, isElementReadOnly, isSelectable } = editor;
+    /*     const withInlines = (editor: Editor) => {
+        const { insertText, isInline, isElementReadOnly, isSelectable } = editor;
 
-        editor.isInline = (element) => ['link', 'button', 'badge'].includes(element.type) || isInline(element);
+        editor.isInline = (element: any) => ['link', 'button', 'badge'].includes(element.type) || isInline(element);
 
         editor.isElementReadOnly = (element: any) => element.type === 'badge' || isElementReadOnly(element);
 
@@ -682,7 +704,7 @@ export const Wysiwyg = ({
         };
 
         return editor;
-    };
+    }; */
 
     const insertLink = (editor: Editor, url: string, text: string, color: string) => {
         if (editor.selection) {
@@ -728,8 +750,8 @@ export const Wysiwyg = ({
         const [match] = Array.from(
             Editor.nodes(editor, {
                 at: Editor.unhangRange(editor, selection),
-                match: (n) => {
-                    return !Editor.isEditor(n) && SlateElement.isElement(n) && n.type === 'link';
+                match: (n: any) => {
+                    return !Editor.isEditor(n) && n.type === 'link';
                 }
             })
         );
@@ -739,20 +761,20 @@ export const Wysiwyg = ({
 
     const isButtonActive = (editor: Editor) => {
         const [button] = Editor.nodes(editor, {
-            match: (n) => !Editor.isEditor(n) && SlateElement.isElement(n) && n.type === 'button'
+            match: (n: any) => !Editor.isEditor(n) && n.type === 'button'
         });
         return !!button;
     };
 
     const unwrapLink = (editor: Editor) => {
         Transforms.unwrapNodes(editor, {
-            match: (n) => !Editor.isEditor(n) && SlateElement.isElement(n) && n.type === 'link'
+            match: (n: any) => !Editor.isEditor(n) && n.type === 'link'
         });
     };
 
     const unwrapButton = (editor: Editor) => {
         Transforms.unwrapNodes(editor, {
-            match: (n) => !Editor.isEditor(n) && SlateElement.isElement(n) && n.type === 'button'
+            match: (n: any) => !Editor.isEditor(n) && n.type === 'button'
         });
     };
 
@@ -797,7 +819,7 @@ export const Wysiwyg = ({
             },
             children: [{ text: CTALeiras }]
         };
-        const button: ButtonElement = {
+        const button: any = {
             type: 'button',
             style: {
                 color: CTAColor,
@@ -986,14 +1008,14 @@ export const Wysiwyg = ({
         console.log('editor: ', editor);
     };
 
-    const isImageUrl = (url: string) => {
+    /* const isImageUrl = (url: string) => {
         if (!url) return false;
         if (!isUrl(url)) return false;
         const ext = new URL(url).pathname.split('.').pop() || '';
         return imageExtensions.includes(ext);
-    };
+    }; */
 
-    const withTables = (editor: Editor) => {
+    /*    const withTables = (editor: Editor) => {
         const { deleteBackward, deleteForward, insertBreak } = editor;
 
         editor.deleteBackward = (unit) => {
@@ -1001,7 +1023,7 @@ export const Wysiwyg = ({
 
             if (selection && Range.isCollapsed(selection)) {
                 const [cell] = Editor.nodes(editor, {
-                    match: (n) => !Editor.isEditor(n) && SlateElement.isElement(n) && n.type === 'table-cell'
+                    match: (n: any) => !Editor.isEditor(n) && n.type === 'table-cell'
                 });
 
                 if (cell) {
@@ -1022,7 +1044,7 @@ export const Wysiwyg = ({
 
             if (selection && Range.isCollapsed(selection)) {
                 const [cell] = Editor.nodes(editor, {
-                    match: (n) => !Editor.isEditor(n) && SlateElement.isElement(n) && n.type === 'table-cell'
+                    match: (n: any) => !Editor.isEditor(n) && n.type === 'table-cell'
                 });
 
                 if (cell) {
@@ -1043,7 +1065,7 @@ export const Wysiwyg = ({
 
             if (selection) {
                 const [table] = Editor.nodes(editor, {
-                    match: (n) => !Editor.isEditor(n) && SlateElement.isElement(n) && n.type === 'table'
+                    match: (n: any) => !Editor.isEditor(n) && n.type === 'table'
                 });
 
                 if (table) {
@@ -1055,57 +1077,19 @@ export const Wysiwyg = ({
         };
 
         return editor;
-    };
+    }; */
 
-    const withImages = (editor: Editor) => {
-        const { insertData, isVoid } = editor;
+    /* const withImages = (editor: Editor) => {
+        const { isVoid } = editor;
 
-        editor.isVoid = (element) => {
+        editor.isVoid = (element: any) => {
             return element.type === 'image' || element.type === 'image-center' || element.type === 'image-right' || element.type === 'image-left' ? true : isVoid(element);
         };
 
-        editor.insertData = (data) => {
-            const text = data.getData('text/plain');
-            const { files } = data;
-            let fs = Array.from(files);
-            let imageObj: any = {};
-
-            if (files && files.length > 0) {
-                fs.forEach((file) => {
-                    if (file && onUpload) {
-                        imageObj = onUpload(file);
-                    }
-                    /* const reader = new FileReader()
-                    const [mime] = file.type.split('/')
-            
-                    if (mime === 'image') {
-                    reader.addEventListener('load', () => {
-                        const url = reader.result;
-                        const alt = image.alt;
-                        const img: any = {
-                            src: url,
-                            alt: alt
-                        }
-                        addImage(editor, img)
-                    })
-            
-                    reader.readAsDataURL(file)
-                    } */
-                });
-                addImage(editor, imageObj);
-            } else if (isImageUrl(text)) {
-                imageObj = {
-                    src: text,
-                    alt: image.alt
-                };
-                addImage(editor, imageObj);
-            } else {
-                insertData(data);
-            }
-        };
+       
 
         return editor;
-    };
+    }; */
 
     const defaultModalValues = {
         tableClass: 'wysiwyg-table',
@@ -1124,7 +1108,7 @@ export const Wysiwyg = ({
         CTAFunc: ''
     };
 
-    const [editor] = useState(() => withInlines(withTables(withImages(withHistory(withReact(createEditor()))))));
+    const editor: ReactEditor = useMemo(() => withHistory(withReact(createEditor())), []);
     /*     const [editor] = useState(() => withReact(createEditor())); */
     const [fontSize, setFontSize] = useState('17px');
     const [imageModal, setImageModal] = useState(false);
@@ -1203,7 +1187,7 @@ export const Wysiwyg = ({
         }
     };
 
-    const deleteImage = (editor: Editor, element: any) => {
+    const deleteImage = (editor: any, element: any) => {
         const path = ReactEditor.findPath(editor, element);
         Transforms.removeNodes(editor, { at: path });
     };
@@ -1236,9 +1220,9 @@ export const Wysiwyg = ({
         );
     };
 
-    const renderLeaf = (props: any) => <Leaf {...props} />;
+    const renderLeaf = useCallback((props: any) => <Leaf {...props} />, []);
 
-    const renderElement = (props: any) => {
+    const renderElement = useCallback((props: any) => {
         let style = props.element.children.style || {};
         const { attributes, element, children } = props;
         const selected = useSelected();
@@ -1624,7 +1608,7 @@ export const Wysiwyg = ({
                 }
             }
         }
-    };
+    }, []);
 
     const renderImageModal = () => {
         return (
@@ -1906,8 +1890,8 @@ export const Wysiwyg = ({
         const [match] = Array.from(
             Editor.nodes(editor, {
                 at: Editor.unhangRange(editor, selection),
-                match: (n) => {
-                    return !Editor.isEditor(n) && SlateElement.isElement(n) && n[obj.keyName] === format;
+                match: (n: any) => {
+                    return !Editor.isEditor(n) && n[obj.keyName] === format;
                 }
             })
         );
@@ -1937,13 +1921,13 @@ export const Wysiwyg = ({
         } */
 
         Transforms.unwrapNodes(editor, {
-            match: (n) => {
-                return !Editor.isEditor(n) && SlateElement.isElement(n) && LIST_TYPES.includes(n.type) && !TEXT_ALIGN_TYPES.includes(format);
+            match: (n: any) => {
+                return !Editor.isEditor(n) && LIST_TYPES.includes(n.type) && !TEXT_ALIGN_TYPES.includes(format);
             },
             split: true
         });
 
-        let newProperties: Partial<SlateElement> = {};
+        let newProperties: any = {};
 
         if (TEXT_ALIGN_TYPES.includes(format)) {
             const { selection } = editor;
@@ -1980,7 +1964,7 @@ export const Wysiwyg = ({
             const [parent]: any = Editor.parent(editor, selection.focus?.path);
             let style = Object.assign({}, parent.style);
             let newStyle = Object.assign(style, { fontSize: value });
-            const newParameters = {
+            const newParameters: any = {
                 style: newStyle
             };
             Transforms.setNodes(editor, newParameters);
