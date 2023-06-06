@@ -1345,7 +1345,7 @@ export const Wysiwyg = ({
         const { attributes, element, children } = props;
         const selected = useSelected();
         const focused = useFocused();
-        const editor = useSlate();
+        /*      const editor = useSlate(); */
         style['textAlign'] = { textAlign: props.element.align };
         if (
             props.element.type === 'heading-1' ||
