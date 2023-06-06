@@ -526,6 +526,208 @@ export const deserialize = (el: any, markAttributes: CustomText | object = {}): 
     }
 };
 
+const unwrapLink = (editor: Editor) => {
+    Transforms.unwrapNodes(editor, {
+        match: (n: any) => !Editor.isEditor(n) && n.type === 'link'
+    });
+};
+
+const unwrapButton = (editor: Editor) => {
+    Transforms.unwrapNodes(editor, {
+        match: (n: any) => !Editor.isEditor(n) && n.type === 'button'
+    });
+};
+
+const isLinkActive = (editor: Editor) => {
+    const { selection } = editor;
+    if (!selection) return false;
+    const [match] = Array.from(
+        Editor.nodes(editor, {
+            at: Editor.unhangRange(editor, selection),
+            match: (n: any) => {
+                return !Editor.isEditor(n) && n.type === 'link';
+            }
+        })
+    );
+
+    return !!match;
+};
+
+const wrapLink = (editor: Editor, url: string, linkText?: string, linkColor?: string) => {
+    if (isLinkActive(editor)) {
+        unwrapLink(editor);
+    }
+
+    const { selection } = editor;
+    const isCollapsed = selection && Range.isCollapsed(selection);
+    const link: LinkElement = {
+        type: 'link',
+        url,
+        style: {
+            color: linkColor,
+            textDecoration: 'none'
+        },
+        linkText: linkText,
+        children: isCollapsed ? [{ text: linkText }] : []
+    };
+
+    if (isCollapsed) {
+        Transforms.insertNodes(editor, link);
+    } else {
+        Transforms.wrapNodes(editor, link, { split: true });
+        Transforms.collapse(editor, { edge: 'end' });
+    }
+};
+
+const isButtonActive = (editor: Editor) => {
+    const [button] = Editor.nodes(editor, {
+        match: (n: any) => !Editor.isEditor(n) && n.type === 'button'
+    });
+    return !!button;
+};
+
+const wrapButton = (editor: Editor, CTALeiras: string, CTAFunc: string, CTAColor: string, CTABgColor: string) => {
+    if (isButtonActive(editor)) {
+        unwrapButton(editor);
+    }
+
+    const { selection } = editor;
+    const isCollapsed = selection && Range.isCollapsed(selection);
+    const link: LinkElement = {
+        type: 'link',
+        url: CTAFunc,
+        style: {
+            color: CTAColor
+        },
+        children: [{ text: CTALeiras }]
+    };
+    const button: any = {
+        type: 'button',
+        style: {
+            color: CTAColor,
+            backgroundColor: CTABgColor
+        },
+        CTAFunc: CTAFunc,
+        CTALeiras: CTALeiras,
+        CTAColor: CTAColor,
+        CTABgColor: CTABgColor,
+        children: isCollapsed ? [link] : []
+    };
+
+    if (isCollapsed) {
+        Transforms.insertNodes(editor, button);
+    } else {
+        Transforms.wrapNodes(editor, button, { split: true });
+        Transforms.collapse(editor, { edge: 'end' });
+    }
+};
+
+const withInlines = (editor: ReactEditor) => {
+    const { insertData, insertText, isInline, isElementReadOnly, isSelectable } = editor;
+
+    editor.isInline = (element: any) => ['link', 'button', 'badge'].includes(element.type) || isInline(element);
+
+    editor.isElementReadOnly = (element: any) => element.type === 'badge' || isElementReadOnly(element);
+
+    editor.isSelectable = (element: any) => element.type !== 'badge' && isSelectable(element);
+
+    editor.insertText = (text) => {
+        if (text && isUrl(text)) {
+            wrapLink(editor, text);
+        } else {
+            insertText(text);
+        }
+    };
+
+    editor.insertData = (data) => {
+        const text = data.getData('text/plain');
+
+        if (text && isUrl(text)) {
+            wrapLink(editor, text);
+        } else {
+            insertData(data);
+        }
+    };
+
+    return editor;
+};
+
+const withImages = (editor: Editor) => {
+    const { isVoid } = editor;
+
+    editor.isVoid = (element: any) => {
+        return element.type === 'image' || element.type === 'image-center' || element.type === 'image-right' || element.type === 'image-left' ? true : isVoid(element);
+    };
+
+    return editor;
+};
+
+const withTables = (editor: Editor) => {
+    const { deleteBackward, deleteForward, insertBreak } = editor;
+
+    editor.deleteBackward = (unit) => {
+        const { selection } = editor;
+
+        if (selection && Range.isCollapsed(selection)) {
+            const [cell] = Editor.nodes(editor, {
+                match: (n: any) => !Editor.isEditor(n) && n.type === 'table-cell'
+            });
+
+            if (cell) {
+                const [, cellPath] = cell;
+                const start = Editor.start(editor, cellPath);
+
+                if (Point.equals(selection.anchor, start)) {
+                    return;
+                }
+            }
+        }
+
+        deleteBackward(unit);
+    };
+
+    editor.deleteForward = (unit) => {
+        const { selection } = editor;
+
+        if (selection && Range.isCollapsed(selection)) {
+            const [cell] = Editor.nodes(editor, {
+                match: (n: any) => !Editor.isEditor(n) && n.type === 'table-cell'
+            });
+
+            if (cell) {
+                const [, cellPath] = cell;
+                const end = Editor.end(editor, cellPath);
+
+                if (Point.equals(selection.anchor, end)) {
+                    return;
+                }
+            }
+        }
+
+        deleteForward(unit);
+    };
+
+    editor.insertBreak = () => {
+        const { selection } = editor;
+
+        if (selection) {
+            const [table] = Editor.nodes(editor, {
+                match: (n: any) => !Editor.isEditor(n) && n.type === 'table'
+            });
+
+            if (table) {
+                return;
+            }
+        }
+
+        insertBreak();
+    };
+
+    return editor;
+};
+
+export const editor: any = useMemo(() => withImages(withTables(withInlines(withHistory(withReact(createEditor()))))), []);
+
 export const Wysiwyg = ({
     className = 'react-slate-wysiwyg',
     id,
@@ -666,36 +868,6 @@ export const Wysiwyg = ({
         toggleTableModal();
     };
 
-    const withInlines = (editor: ReactEditor) => {
-        const { insertData, insertText, isInline, isElementReadOnly, isSelectable } = editor;
-
-        editor.isInline = (element: any) => ['link', 'button', 'badge'].includes(element.type) || isInline(element);
-
-        editor.isElementReadOnly = (element: any) => element.type === 'badge' || isElementReadOnly(element);
-
-        editor.isSelectable = (element: any) => element.type !== 'badge' && isSelectable(element);
-
-        editor.insertText = (text) => {
-            if (text && isUrl(text)) {
-                wrapLink(editor, text);
-            } else {
-                insertText(text);
-            }
-        };
-
-        editor.insertData = (data) => {
-            const text = data.getData('text/plain');
-
-            if (text && isUrl(text)) {
-                wrapLink(editor, text);
-            } else {
-                insertData(data);
-            }
-        };
-
-        return editor;
-    };
-
     const insertLink = (editor: Editor, url: string, text: string, color: string) => {
         if (editor.selection) {
             wrapLink(editor, url, text, color);
@@ -731,102 +903,6 @@ export const Wysiwyg = ({
             };
 
             Transforms.insertNodes(editor, youtube);
-        }
-    };
-
-    const isLinkActive = (editor: Editor) => {
-        const { selection } = editor;
-        if (!selection) return false;
-        const [match] = Array.from(
-            Editor.nodes(editor, {
-                at: Editor.unhangRange(editor, selection),
-                match: (n: any) => {
-                    return !Editor.isEditor(n) && n.type === 'link';
-                }
-            })
-        );
-
-        return !!match;
-    };
-
-    const isButtonActive = (editor: Editor) => {
-        const [button] = Editor.nodes(editor, {
-            match: (n: any) => !Editor.isEditor(n) && n.type === 'button'
-        });
-        return !!button;
-    };
-
-    const unwrapLink = (editor: Editor) => {
-        Transforms.unwrapNodes(editor, {
-            match: (n: any) => !Editor.isEditor(n) && n.type === 'link'
-        });
-    };
-
-    const unwrapButton = (editor: Editor) => {
-        Transforms.unwrapNodes(editor, {
-            match: (n: any) => !Editor.isEditor(n) && n.type === 'button'
-        });
-    };
-
-    const wrapLink = (editor: Editor, url: string, linkText?: string, linkColor?: string) => {
-        if (isLinkActive(editor)) {
-            unwrapLink(editor);
-        }
-
-        const { selection } = editor;
-        const isCollapsed = selection && Range.isCollapsed(selection);
-        const link: LinkElement = {
-            type: 'link',
-            url,
-            style: {
-                color: linkColor,
-                textDecoration: 'none'
-            },
-            linkText: linkText,
-            children: isCollapsed ? [{ text: linkText }] : []
-        };
-
-        if (isCollapsed) {
-            Transforms.insertNodes(editor, link);
-        } else {
-            Transforms.wrapNodes(editor, link, { split: true });
-            Transforms.collapse(editor, { edge: 'end' });
-        }
-    };
-
-    const wrapButton = (editor: Editor, CTALeiras: string, CTAFunc: string, CTAColor: string, CTABgColor: string) => {
-        if (isButtonActive(editor)) {
-            unwrapButton(editor);
-        }
-
-        const { selection } = editor;
-        const isCollapsed = selection && Range.isCollapsed(selection);
-        const link: LinkElement = {
-            type: 'link',
-            url: CTAFunc,
-            style: {
-                color: CTAColor
-            },
-            children: [{ text: CTALeiras }]
-        };
-        const button: any = {
-            type: 'button',
-            style: {
-                color: CTAColor,
-                backgroundColor: CTABgColor
-            },
-            CTAFunc: CTAFunc,
-            CTALeiras: CTALeiras,
-            CTAColor: CTAColor,
-            CTABgColor: CTABgColor,
-            children: isCollapsed ? [link] : []
-        };
-
-        if (isCollapsed) {
-            Transforms.insertNodes(editor, button);
-        } else {
-            Transforms.wrapNodes(editor, button, { split: true });
-            Transforms.collapse(editor, { edge: 'end' });
         }
     };
 
@@ -1005,80 +1081,6 @@ export const Wysiwyg = ({
         return imageExtensions.includes(ext);
     }; */
 
-    const withTables = (editor: Editor) => {
-        const { deleteBackward, deleteForward, insertBreak } = editor;
-
-        editor.deleteBackward = (unit) => {
-            const { selection } = editor;
-
-            if (selection && Range.isCollapsed(selection)) {
-                const [cell] = Editor.nodes(editor, {
-                    match: (n: any) => !Editor.isEditor(n) && n.type === 'table-cell'
-                });
-
-                if (cell) {
-                    const [, cellPath] = cell;
-                    const start = Editor.start(editor, cellPath);
-
-                    if (Point.equals(selection.anchor, start)) {
-                        return;
-                    }
-                }
-            }
-
-            deleteBackward(unit);
-        };
-
-        editor.deleteForward = (unit) => {
-            const { selection } = editor;
-
-            if (selection && Range.isCollapsed(selection)) {
-                const [cell] = Editor.nodes(editor, {
-                    match: (n: any) => !Editor.isEditor(n) && n.type === 'table-cell'
-                });
-
-                if (cell) {
-                    const [, cellPath] = cell;
-                    const end = Editor.end(editor, cellPath);
-
-                    if (Point.equals(selection.anchor, end)) {
-                        return;
-                    }
-                }
-            }
-
-            deleteForward(unit);
-        };
-
-        editor.insertBreak = () => {
-            const { selection } = editor;
-
-            if (selection) {
-                const [table] = Editor.nodes(editor, {
-                    match: (n: any) => !Editor.isEditor(n) && n.type === 'table'
-                });
-
-                if (table) {
-                    return;
-                }
-            }
-
-            insertBreak();
-        };
-
-        return editor;
-    };
-
-    const withImages = (editor: Editor) => {
-        const { isVoid } = editor;
-
-        editor.isVoid = (element: any) => {
-            return element.type === 'image' || element.type === 'image-center' || element.type === 'image-right' || element.type === 'image-left' ? true : isVoid(element);
-        };
-
-        return editor;
-    };
-
     const defaultModalValues = {
         tableClass: 'wysiwyg-table',
         rowNumber: '',
@@ -1095,8 +1097,6 @@ export const Wysiwyg = ({
         CTAFontColor: '',
         CTAFunc: ''
     };
-
-    const editor: any = useMemo(() => withImages(withTables(withInlines(withHistory(withReact(createEditor()))))), []);
 
     /*     const [editor] = useState(() => withReact(createEditor())); */
     const [fontSize, setFontSize] = useState('17px');
