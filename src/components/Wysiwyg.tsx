@@ -2,7 +2,7 @@ import React, { useCallback, useState, useMemo, createContext, useContext } from
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
-import { Transforms, Editor, Element as SlateElement, Text, Range, Point, BaseText, BaseElement, Ancestor, NodeInterface } from 'slate';
+import { Transforms, Editor, Element as SlateElement, Text, Range, Point, BaseText, BaseElement, Ancestor, NodeInterface, createEditor } from 'slate';
 import { Editable, withReact, ReactEditor } from 'slate-react';
 import { withHistory } from 'slate-history';
 import isUrl from 'is-url';
@@ -1239,7 +1239,7 @@ export const Wysiwyg = ({
         CTAFunc: ''
     };
 
-    const editor: any = useMemo(() => withImages(withTables(withInlines(withHistory(withReact(useEditor()))))), []);
+    const editor: any = useMemo(() => withImages(withTables(withInlines(withHistory(withReact(createEditor()))))), []);
 
     /*     const [editor] = useState(() => withReact(createEditor())); */
     const [fontSize, setFontSize] = useState('17px');
