@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo, createContext, useContext } from 'react';
+import React, { useCallback, useState, useMemo, createContext } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -9,64 +9,13 @@ import isUrl from 'is-url';
 /* import imageExtensions from 'image-extensions'; */
 import { css } from '@emotion/css';
 import { Toolbar, ToolbarButton, Icon } from './components';
+export const SlateContext = createContext<[ReactEditor] | null>(null);
 export const EditorContext = createContext<ReactEditor | null>(null);
 export const SelectedContext = createContext(false);
 export const FocusedContext = createContext(false);
 /**
  * Get the current `focused` state of the editor.
  */
-
-export const useFocused = (): boolean => {
-    return useContext(FocusedContext);
-};
-
-export const useSlateStatic = (): ReactEditor | null => {
-    return useContext(EditorContext);
-};
-
-export const useSelected = (): boolean => {
-    return useContext(SelectedContext);
-};
-
-/**
- * Get the current `Editor` class that the component lives under.
- */
-
-export const useEditor = () => {
-    const editor = useContext(EditorContext);
-
-    if (!editor) {
-        throw new Error(`The \`useEditor\` hook must be used inside the <Slate> component's context.`);
-    }
-
-    return editor;
-};
-
-/**
- * A React context for sharing the `Editor` class, in a way that re-renders the
- * context whenever changes occur.
- */
-
-export const SlateContext = createContext<[ReactEditor] | null>(null);
-
-/**
- * Get the current `Editor` class that the component lives under.
- */
-
-/* export const useSlate = () => {
-    const context = useContext(SlateContext);
-
-    if (!context) {
-        throw new Error(`The \`useSlate\` hook must be used inside the <SlateProvider> component's context.`);
-    }
-
-    const [editor] = context;
-    return editor;
-}; */
-
-/* import 'bootstrap/dist/css/bootstrap.min.css'; */
-/* import '../styles/font-awesome.min.css';
-import '../styles/index.css'; */
 
 // INTERFACES AND TYPES
 
