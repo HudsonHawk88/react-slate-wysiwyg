@@ -3,7 +3,7 @@ import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
 import { Transforms, Editor, Element as SlateElement, Text, Range, Point, BaseText, BaseElement, Ancestor, NodeInterface, createEditor } from 'slate';
-import { Editable, withReact, ReactEditor } from 'slate-react';
+import { Editable, withReact, ReactEditor, Slate } from 'slate-react';
 import { withHistory } from 'slate-history';
 import isUrl from 'is-url';
 /* import imageExtensions from 'image-extensions'; */
@@ -180,7 +180,7 @@ export const EDITOR_TO_ON_CHANGE = new WeakMap<ReactEditor, (children: CustomEle
 
 export const PLACEHOLDER_SYMBOL = Symbol('placeholder') as unknown as string;
 
-export const Slate = (props: {
+/* export const Slate = (props: {
     editor: ReactEditor;
     initialValue: CustomElement[];
     value: CustomElement[];
@@ -207,7 +207,7 @@ export const Slate = (props: {
             </EditorContext.Provider>
         </SlateContext.Provider>
     );
-};
+}; */
 
 const defaultColors = {
     normal: {
@@ -1184,8 +1184,8 @@ export const Wysiwyg = ({
     const [image, setImage] = useState(defaultImage);
     const [format, setFormat] = useState('');
     const [modalValues, setModalvalues] = useState(defaultModalValues);
-    const [value, setValue] = useState(initialValue);
-    const [selection, setSelection] = useState(null);
+    /*     const [value, setValue] = useState(initialValue);
+    const [selection, setSelection] = useState(null); */
     const i = [
         { id: 0, src: 'https://igyteljesazelet.hu/sites/default/files/styles/widescreen/public/2021-01/cicatestbesz2.jpg?itok=q7vFnOSX', alt: 'cica2' },
         { id: 1, src: 'https://behir.hu/web/content/media/2021/06/cica-600x338.jpg', alt: 'cica1' }
@@ -2166,16 +2166,7 @@ export const Wysiwyg = ({
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
-            <Slate
-                initialValue={defaultValue}
-                selection={selection}
-                editor={editor}
-                onChange={(value: CustomElement[], selection: any) => {
-                    setValue(value);
-                    setSelection(selection);
-                }}
-                value={value}
-            >
+            <Slate initialValue={defaultValue} editor={editor} onChange={onChange}>
                 <Toolbar className="wysiwyg-editor-toolbar">
                     <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
                     <MarkButton format="italic" icon="fa fa-italic" colors={colors} />
