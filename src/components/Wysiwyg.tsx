@@ -3,22 +3,29 @@ import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
 import { Transforms, Editor, Element as SlateElement, Text, Range, Point, BaseText, BaseElement, Ancestor, NodeInterface } from 'slate';
-import { Editable, withReact, ReactEditor, useSelected, useSlateStatic } from 'slate-react';
+import { Editable, withReact, ReactEditor } from 'slate-react';
 import { withHistory } from 'slate-history';
 import isUrl from 'is-url';
 /* import imageExtensions from 'image-extensions'; */
 import { css } from '@emotion/css';
 import { Toolbar, ToolbarButton, Icon } from './components';
-export const EditorContext = createContext<Editor | null>(null);
-
+export const EditorContext = createContext<ReactEditor | null>(null);
+export const SelectedContext = createContext(false);
 export const FocusedContext = createContext(false);
-
 /**
  * Get the current `focused` state of the editor.
  */
 
 export const useFocused = (): boolean => {
     return useContext(FocusedContext);
+};
+
+export const useSlateStatic = (): ReactEditor | null => {
+    return useContext(EditorContext);
+};
+
+export const useSelected = (): boolean => {
+    return useContext(SelectedContext);
 };
 
 /**
@@ -1338,7 +1345,7 @@ export const Wysiwyg = ({
         const { attributes, element, children } = props;
         const selected = useSelected();
         const focused = useFocused();
-        const editor = useSlateStatic();
+        const editor = useSlate();
         style['textAlign'] = { textAlign: props.element.align };
         if (
             props.element.type === 'heading-1' ||
