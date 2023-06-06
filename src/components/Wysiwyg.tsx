@@ -47,7 +47,7 @@ export const useEditor = () => {
  * context whenever changes occur.
  */
 
-export const SlateContext = createContext<[Editor] | null>(null);
+export const SlateContext = createContext<[ReactEditor] | null>(null);
 
 /**
  * Get the current `Editor` class that the component lives under.
@@ -203,7 +203,7 @@ export const NODE_TO_PARENT: WeakMap<CustomNode, Ancestor> = new WeakMap();
  * are used to resolve DOM event-related logic into Slate actions.
  */
 
-export const EDITOR_TO_ELEMENT: WeakMap<Editor, HTMLElement> = new WeakMap();
+export const EDITOR_TO_ELEMENT: WeakMap<ReactEditor, HTMLElement> = new WeakMap();
 export const EDITOR_TO_PLACEHOLDER: WeakMap<Editor, string> = new WeakMap();
 export const ELEMENT_TO_NODE: WeakMap<HTMLElement, CustomNode> = new WeakMap();
 export const KEY_TO_ELEMENT: WeakMap<Key, HTMLElement> = new WeakMap();
@@ -214,16 +214,16 @@ export const NODE_TO_KEY: WeakMap<CustomNode, Key> = new WeakMap();
  * Weak maps for storing editor-related state.
  */
 
-export const IS_READ_ONLY: WeakMap<Editor, boolean> = new WeakMap();
-export const IS_FOCUSED: WeakMap<Editor, boolean> = new WeakMap();
-export const IS_DRAGGING: WeakMap<Editor, boolean> = new WeakMap();
-export const IS_CLICKING: WeakMap<Editor, boolean> = new WeakMap();
+export const IS_READ_ONLY: WeakMap<ReactEditor, boolean> = new WeakMap();
+export const IS_FOCUSED: WeakMap<ReactEditor, boolean> = new WeakMap();
+export const IS_DRAGGING: WeakMap<ReactEditor, boolean> = new WeakMap();
+export const IS_CLICKING: WeakMap<ReactEditor, boolean> = new WeakMap();
 
 /**
  * Weak map for associating the context `onChange` prop with the plugin.
  */
 
-export const EDITOR_TO_ON_CHANGE = new WeakMap<Editor, (children: CustomElement[], selection: Range | null) => void>();
+export const EDITOR_TO_ON_CHANGE = new WeakMap<ReactEditor, (children: CustomElement[], selection: Range | null) => void>();
 
 /**
  * Symbols.
@@ -241,7 +241,7 @@ export const Slate = (props: {
     [key: string]: any;
 }) => {
     const { editor, children, onChange, value, selection, ...rest } = props;
-    const context: [Editor] = useMemo(() => {
+    const context: [ReactEditor] = useMemo(() => {
         editor.children = value;
         editor.selection = selection;
         return [editor];
