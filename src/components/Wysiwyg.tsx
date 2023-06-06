@@ -675,7 +675,7 @@ export const Wysiwyg = ({
     onUpload
 }: WysiwygProps) => {
     const CustomButton = (props: any) => {
-        const editor = useSlate();
+        /* const editor = useSlate(); */
         const { format, children, colors } = props;
         return (
             <ToolbarButton
@@ -1083,7 +1083,7 @@ export const Wysiwyg = ({
       } */
 
     const RemoveLinkButton = (props: FormatButtonProps) => {
-        const editor = useSlate();
+        /* const editor = useSlate(); */
         const { format, icon } = props;
 
         return (
@@ -1102,7 +1102,7 @@ export const Wysiwyg = ({
     };
 
     const ToggleEditableButtonButton = (props: FormatButtonProps) => {
-        const editor = useSlate();
+        /*      const editor = useSlate(); */
         const { format, icon } = props;
         return (
             <ToolbarButton
@@ -2084,7 +2084,7 @@ export const Wysiwyg = ({
     };
 
     const BlockButton = (props: FormatButtonProps) => {
-        const editor = useSlate();
+        /*  const editor = useSlate(); */
         const { format, icon, colors } = props;
         const headingNumberIndex = format.indexOf('-');
         const headingNumber = icon === 'fa fa-header' && format.slice(headingNumberIndex + 1);
@@ -2112,7 +2112,7 @@ export const Wysiwyg = ({
     };
 
     const MarkButton = (props: FormatButtonProps) => {
-        const editor = useSlate();
+        /*      const editor = useSlate(); */
         const { format, icon, colors } = props;
 
         return (
@@ -2190,7 +2190,7 @@ export const Wysiwyg = ({
     }; */
 
     const FontsizeButton = (props: any): any => {
-        const editor = useSlate();
+        /*         const editor = useSlate(); */
         const { format } = props;
         return (
             <ToolbarButton className="font_button" style={{ position: 'relative', top: '-3px', left: '15px' }} onMouseUp={() => {}} name={format} active={isFontSizeActive(editor, setFontSize)}>
