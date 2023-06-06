@@ -82,7 +82,7 @@ export interface CustomNode extends NodeInterface {
     TEXT_NODE: any;
     ELEMENT_NODE: any;
 }
-export declare type Node = Editor | Element | Text;
+export declare type Node = ReactEditor | Element | Text;
 export type CustomImage = { type: string; url: string; children?: EmptyText[] };
 export type LinkElement = { type: string; url: string; style?: object; linkText?: string; children: CustomText[] | CustomElement[] | any };
 export type YoutubeElement = { type: string; youtubeUrl: string; height: string | number; width: string | number; children: CustomText[]; style: object };
@@ -682,7 +682,6 @@ export const Wysiwyg = ({
     onUpload
 }: WysiwygProps) => {
     const CustomButton = (props: any) => {
-        /* const editor = useSlate(); */
         const { format, children, colors } = props;
         return (
             <ToolbarButton
@@ -990,21 +989,9 @@ export const Wysiwyg = ({
         let newStyle: any = {};
         const { attributes, element } = props;
         Object.assign(newStyle, element.style);
-        const selected = useSelected();
         Object.assign(newStyle, { textDecoration: 'none' });
         return (
-            <a
-                {...attributes}
-                href={element.url}
-                style={newStyle}
-                className={
-                    selected
-                        ? css`
-                              box-shadow: 0 0 0 3px #ddd;
-                          `
-                        : ''
-                }
-            >
+            <a {...attributes} href={element.url} style={newStyle}>
                 <InlineChromiumBugfix />
                 {element.linkText}
                 <InlineChromiumBugfix />
@@ -1048,7 +1035,6 @@ export const Wysiwyg = ({
     };
 
     const BadgeComponent = (props: any) => {
-        const selected = useSelected();
         const { attributes, children } = props;
 
         return (
@@ -1061,9 +1047,7 @@ export const Wysiwyg = ({
                     padding: 2px 6px;
                     border-radius: 2px;
                     font-size: 0.9em;
-                    ${selected && 'box-shadow: 0 0 0 3px #ddd;'}
                 `}
-                data-playwright-selected={selected}
             >
                 <InlineChromiumBugfix />
                 {children}
@@ -1073,7 +1057,6 @@ export const Wysiwyg = ({
     };
 
     /* const AddLinkButton = () => {
-        const editor = useSlate()
         return (
           <Button
             active={isLinkActive(editor)}
@@ -1090,7 +1073,6 @@ export const Wysiwyg = ({
       } */
 
     const RemoveLinkButton = (props: FormatButtonProps) => {
-        /* const editor = useSlate(); */
         const { format, icon } = props;
 
         return (
@@ -1109,7 +1091,6 @@ export const Wysiwyg = ({
     };
 
     const ToggleEditableButtonButton = (props: FormatButtonProps) => {
-        /*      const editor = useSlate(); */
         const { format, icon } = props;
         return (
             <ToolbarButton
@@ -1343,9 +1324,6 @@ export const Wysiwyg = ({
     const renderElement = useCallback((props: any) => {
         let style = props.element.children.style || {};
         const { attributes, element, children } = props;
-        const selected = useSelected();
-        const focused = useFocused();
-        /*      const editor = useSlate(); */
         style['textAlign'] = { textAlign: props.element.align };
         if (
             props.element.type === 'heading-1' ||
@@ -1437,7 +1415,6 @@ export const Wysiwyg = ({
                                     display: block;
                                     max-width: 100%;
                                     max-height: 20em;
-                                    box-shadow: ${selected && focused ? '0 0 0 3px #B4D5FF' : 'none'};
                                 `}
                             />
                             <button
@@ -1483,7 +1460,6 @@ export const Wysiwyg = ({
                                     display: block;
                                     max-width: 100%;
                                     max-height: 20em;
-                                    box-shadow: ${selected && focused ? '0 0 0 3px #B4D5FF' : 'none'};
                                 `}
                             />
                             <button
@@ -1529,7 +1505,6 @@ export const Wysiwyg = ({
                                 className={css`
                                     max-width: 100%;
                                     max-height: 20em;
-                                    box-shadow: ${selected && focused ? '0 0 0 3px #B4D5FF' : 'none'};
                                 `}
                             />
                             <button
@@ -1569,7 +1544,6 @@ export const Wysiwyg = ({
                                 className={css`
                                     max-width: 100%;
                                     max-height: 20em;
-                                    box-shadow: ${selected && focused ? '0 0 0 3px #B4D5FF' : 'none'};
                                 `}
                             />
                             <button
@@ -2091,7 +2065,6 @@ export const Wysiwyg = ({
     };
 
     const BlockButton = (props: FormatButtonProps) => {
-        /*  const editor = useSlate(); */
         const { format, icon, colors } = props;
         const headingNumberIndex = format.indexOf('-');
         const headingNumber = icon === 'fa fa-header' && format.slice(headingNumberIndex + 1);
@@ -2119,7 +2092,6 @@ export const Wysiwyg = ({
     };
 
     const MarkButton = (props: FormatButtonProps) => {
-        /*      const editor = useSlate(); */
         const { format, icon, colors } = props;
 
         return (
@@ -2197,7 +2169,6 @@ export const Wysiwyg = ({
     }; */
 
     const FontsizeButton = (props: any): any => {
-        /*         const editor = useSlate(); */
         const { format } = props;
         return (
             <ToolbarButton className="font_button" style={{ position: 'relative', top: '-3px', left: '15px' }} onMouseUp={() => {}} name={format} active={isFontSizeActive(editor, setFontSize)}>
