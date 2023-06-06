@@ -53,7 +53,7 @@ export const SlateContext = createContext<[ReactEditor] | null>(null);
  * Get the current `Editor` class that the component lives under.
  */
 
-export const useSlate = () => {
+/* export const useSlate = () => {
     const context = useContext(SlateContext);
 
     if (!context) {
@@ -62,7 +62,7 @@ export const useSlate = () => {
 
     const [editor] = context;
     return editor;
-};
+}; */
 
 /* import 'bootstrap/dist/css/bootstrap.min.css'; */
 /* import '../styles/font-awesome.min.css';
@@ -248,6 +248,8 @@ export const Slate = (props: {
     }, [value, selection, ...Object.values(rest)]);
 
     EDITOR_TO_ON_CHANGE.set(editor, onChange);
+
+    console.log(context, editor);
 
     return (
         <SlateContext.Provider value={context}>
