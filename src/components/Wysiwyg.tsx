@@ -1,14 +1,61 @@
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useState, useMemo, createContext, useContext } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
-import { createEditor, Transforms, Editor, Element as SlateElement, Text, Range, Point, BaseText, BaseElement } from 'slate';
-import { Slate, Editable, withReact, ReactEditor, useSlate, useFocused, useSelected, useSlateStatic } from 'slate-react';
+import { createEditor, Transforms, Editor, Element as SlateElement, Text, Range, Point, BaseText, BaseElement, Ancestor, NodeInterface } from 'slate';
+import { Editable, withReact, ReactEditor, useSelected, useSlateStatic } from 'slate-react';
 import { withHistory } from 'slate-history';
 import isUrl from 'is-url';
 /* import imageExtensions from 'image-extensions'; */
 import { css } from '@emotion/css';
 import { Toolbar, ToolbarButton, Icon } from './components';
+export const EditorContext = createContext<Editor | null>(null);
+
+export const FocusedContext = createContext(false);
+
+/**
+ * Get the current `focused` state of the editor.
+ */
+
+export const useFocused = (): boolean => {
+    return useContext(FocusedContext);
+};
+
+/**
+ * Get the current `Editor` class that the component lives under.
+ */
+
+export const useEditor = () => {
+    const editor = useContext(EditorContext);
+
+    if (!editor) {
+        throw new Error(`The \`useEditor\` hook must be used inside the <Slate> component's context.`);
+    }
+
+    return editor;
+};
+
+/**
+ * A React context for sharing the `Editor` class, in a way that re-renders the
+ * context whenever changes occur.
+ */
+
+export const SlateContext = createContext<[Editor] | null>(null);
+
+/**
+ * Get the current `Editor` class that the component lives under.
+ */
+
+export const useSlate = () => {
+    const context = useContext(SlateContext);
+
+    if (!context) {
+        throw new Error(`The \`useSlate\` hook must be used inside the <SlateProvider> component's context.`);
+    }
+
+    const [editor] = context;
+    return editor;
+};
 
 /* import 'bootstrap/dist/css/bootstrap.min.css'; */
 /* import '../styles/font-awesome.min.css';
@@ -23,6 +70,12 @@ export interface CustomElement extends BaseElement {
     style?: object;
     children: CustomElement[] | CustomText[];
 }
+
+export interface CustomNode extends NodeInterface {
+    TEXT_NODE: any;
+    ELEMENT_NODE: any;
+}
+export declare type Node = Editor | Element | Text;
 export type CustomImage = { type: string; url: string; children?: EmptyText[] };
 export type LinkElement = { type: string; url: string; style?: object; linkText?: string; children: CustomText[] | CustomElement[] | any };
 export type YoutubeElement = { type: string; youtubeUrl: string; height: string | number; width: string | number; children: CustomText[]; style: object };
@@ -60,7 +113,7 @@ interface WysiwygProps {
     key?: string;
     id?: string | undefined;
     initialValue: CustomElement[];
-    value: CustomElement[];
+    defaultValue?: CustomElement[];
     onChange: VoidFunction;
     customButtons?: Array<[]>;
     colors?: Object;
@@ -114,6 +167,89 @@ export const initialValue: CustomElement[] = [
         children: [{ text: '', style: { fontSize: '17px' } }]
     }
 ];
+
+let n = 0;
+
+/**
+ * A class that keeps track of a key string. We use a full class here because we
+ * want to be able to use them as keys in `WeakMap` objects.
+ */
+
+export class Key {
+    id: string;
+
+    constructor() {
+        this.id = `${n++}`;
+    }
+}
+
+/**
+ * Two weak maps that allow us rebuild a path given a node. They are populated
+ * at render time such that after a render occurs we can always backtrack.
+ */
+
+export const NODE_TO_INDEX: WeakMap<CustomNode, number> = new WeakMap();
+export const NODE_TO_PARENT: WeakMap<CustomNode, Ancestor> = new WeakMap();
+
+/**
+ * Weak maps that allow us to go between Slate nodes and DOM nodes. These
+ * are used to resolve DOM event-related logic into Slate actions.
+ */
+
+export const EDITOR_TO_ELEMENT: WeakMap<Editor, HTMLElement> = new WeakMap();
+export const EDITOR_TO_PLACEHOLDER: WeakMap<Editor, string> = new WeakMap();
+export const ELEMENT_TO_NODE: WeakMap<HTMLElement, CustomNode> = new WeakMap();
+export const KEY_TO_ELEMENT: WeakMap<Key, HTMLElement> = new WeakMap();
+export const NODE_TO_ELEMENT: WeakMap<CustomNode, HTMLElement> = new WeakMap();
+export const NODE_TO_KEY: WeakMap<CustomNode, Key> = new WeakMap();
+
+/**
+ * Weak maps for storing editor-related state.
+ */
+
+export const IS_READ_ONLY: WeakMap<Editor, boolean> = new WeakMap();
+export const IS_FOCUSED: WeakMap<Editor, boolean> = new WeakMap();
+export const IS_DRAGGING: WeakMap<Editor, boolean> = new WeakMap();
+export const IS_CLICKING: WeakMap<Editor, boolean> = new WeakMap();
+
+/**
+ * Weak map for associating the context `onChange` prop with the plugin.
+ */
+
+export const EDITOR_TO_ON_CHANGE = new WeakMap<Editor, (children: CustomElement[], selection: Range | null) => void>();
+
+/**
+ * Symbols.
+ */
+
+export const PLACEHOLDER_SYMBOL = Symbol('placeholder') as unknown as string;
+
+export const Slate = (props: {
+    editor: ReactEditor;
+    initialValue: CustomElement[];
+    value: CustomElement[];
+    selection: Range | null;
+    children: React.ReactNode;
+    onChange: (children: CustomElement[], selection: Range | null) => void;
+    [key: string]: any;
+}) => {
+    const { editor, children, onChange, value, selection, ...rest } = props;
+    const context: [Editor] = useMemo(() => {
+        editor.children = value;
+        editor.selection = selection;
+        return [editor];
+    }, [value, selection, ...Object.values(rest)]);
+
+    EDITOR_TO_ON_CHANGE.set(editor, onChange);
+
+    return (
+        <SlateContext.Provider value={context}>
+            <EditorContext.Provider value={editor}>
+                <FocusedContext.Provider value={ReactEditor.isFocused(editor)}>{children}</FocusedContext.Provider>
+            </EditorContext.Provider>
+        </SlateContext.Provider>
+    );
+};
 
 const defaultColors = {
     normal: {
@@ -407,7 +543,7 @@ const getNode = (node: any, ch?: any) => {
     }
 };
 
-export const serialize = (nodes: CustomElement[]) => {
+export const serialize = (nodes: CustomElement[] | Node[]) => {
     let result = nodes.map((node: any): string[] => {
         const children =
             node.children &&
@@ -526,212 +662,10 @@ export const deserialize = (el: any, markAttributes: CustomText | object = {}): 
     }
 };
 
-const unwrapLink = (editor: Editor) => {
-    Transforms.unwrapNodes(editor, {
-        match: (n: any) => !Editor.isEditor(n) && n.type === 'link'
-    });
-};
-
-const unwrapButton = (editor: Editor) => {
-    Transforms.unwrapNodes(editor, {
-        match: (n: any) => !Editor.isEditor(n) && n.type === 'button'
-    });
-};
-
-const isLinkActive = (editor: Editor) => {
-    const { selection } = editor;
-    if (!selection) return false;
-    const [match] = Array.from(
-        Editor.nodes(editor, {
-            at: Editor.unhangRange(editor, selection),
-            match: (n: any) => {
-                return !Editor.isEditor(n) && n.type === 'link';
-            }
-        })
-    );
-
-    return !!match;
-};
-
-const wrapLink = (editor: Editor, url: string, linkText?: string, linkColor?: string) => {
-    if (isLinkActive(editor)) {
-        unwrapLink(editor);
-    }
-
-    const { selection } = editor;
-    const isCollapsed = selection && Range.isCollapsed(selection);
-    const link: LinkElement = {
-        type: 'link',
-        url,
-        style: {
-            color: linkColor,
-            textDecoration: 'none'
-        },
-        linkText: linkText,
-        children: isCollapsed ? [{ text: linkText }] : []
-    };
-
-    if (isCollapsed) {
-        Transforms.insertNodes(editor, link);
-    } else {
-        Transforms.wrapNodes(editor, link, { split: true });
-        Transforms.collapse(editor, { edge: 'end' });
-    }
-};
-
-const isButtonActive = (editor: Editor) => {
-    const [button] = Editor.nodes(editor, {
-        match: (n: any) => !Editor.isEditor(n) && n.type === 'button'
-    });
-    return !!button;
-};
-
-const wrapButton = (editor: Editor, CTALeiras: string, CTAFunc: string, CTAColor: string, CTABgColor: string) => {
-    if (isButtonActive(editor)) {
-        unwrapButton(editor);
-    }
-
-    const { selection } = editor;
-    const isCollapsed = selection && Range.isCollapsed(selection);
-    const link: LinkElement = {
-        type: 'link',
-        url: CTAFunc,
-        style: {
-            color: CTAColor
-        },
-        children: [{ text: CTALeiras }]
-    };
-    const button: any = {
-        type: 'button',
-        style: {
-            color: CTAColor,
-            backgroundColor: CTABgColor
-        },
-        CTAFunc: CTAFunc,
-        CTALeiras: CTALeiras,
-        CTAColor: CTAColor,
-        CTABgColor: CTABgColor,
-        children: isCollapsed ? [link] : []
-    };
-
-    if (isCollapsed) {
-        Transforms.insertNodes(editor, button);
-    } else {
-        Transforms.wrapNodes(editor, button, { split: true });
-        Transforms.collapse(editor, { edge: 'end' });
-    }
-};
-
-const withInlines = (editor: ReactEditor) => {
-    const { insertData, insertText, isInline, isElementReadOnly, isSelectable } = editor;
-
-    editor.isInline = (element: any) => ['link', 'button', 'badge'].includes(element.type) || isInline(element);
-
-    editor.isElementReadOnly = (element: any) => element.type === 'badge' || isElementReadOnly(element);
-
-    editor.isSelectable = (element: any) => element.type !== 'badge' && isSelectable(element);
-
-    editor.insertText = (text) => {
-        if (text && isUrl(text)) {
-            wrapLink(editor, text);
-        } else {
-            insertText(text);
-        }
-    };
-
-    editor.insertData = (data) => {
-        const text = data.getData('text/plain');
-
-        if (text && isUrl(text)) {
-            wrapLink(editor, text);
-        } else {
-            insertData(data);
-        }
-    };
-
-    return editor;
-};
-
-const withImages = (editor: Editor) => {
-    const { isVoid } = editor;
-
-    editor.isVoid = (element: any) => {
-        return element.type === 'image' || element.type === 'image-center' || element.type === 'image-right' || element.type === 'image-left' ? true : isVoid(element);
-    };
-
-    return editor;
-};
-
-const withTables = (editor: Editor) => {
-    const { deleteBackward, deleteForward, insertBreak } = editor;
-
-    editor.deleteBackward = (unit) => {
-        const { selection } = editor;
-
-        if (selection && Range.isCollapsed(selection)) {
-            const [cell] = Editor.nodes(editor, {
-                match: (n: any) => !Editor.isEditor(n) && n.type === 'table-cell'
-            });
-
-            if (cell) {
-                const [, cellPath] = cell;
-                const start = Editor.start(editor, cellPath);
-
-                if (Point.equals(selection.anchor, start)) {
-                    return;
-                }
-            }
-        }
-
-        deleteBackward(unit);
-    };
-
-    editor.deleteForward = (unit) => {
-        const { selection } = editor;
-
-        if (selection && Range.isCollapsed(selection)) {
-            const [cell] = Editor.nodes(editor, {
-                match: (n: any) => !Editor.isEditor(n) && n.type === 'table-cell'
-            });
-
-            if (cell) {
-                const [, cellPath] = cell;
-                const end = Editor.end(editor, cellPath);
-
-                if (Point.equals(selection.anchor, end)) {
-                    return;
-                }
-            }
-        }
-
-        deleteForward(unit);
-    };
-
-    editor.insertBreak = () => {
-        const { selection } = editor;
-
-        if (selection) {
-            const [table] = Editor.nodes(editor, {
-                match: (n: any) => !Editor.isEditor(n) && n.type === 'table'
-            });
-
-            if (table) {
-                return;
-            }
-        }
-
-        insertBreak();
-    };
-
-    return editor;
-};
-
-export const editor: any = useMemo(() => withImages(withTables(withInlines(withHistory(withReact(createEditor()))))), []);
-
 export const Wysiwyg = ({
     className = 'react-slate-wysiwyg',
     id,
-    value = initialValue,
+    defaultValue = initialValue,
     colors = defaultColors,
     reserved = false,
     placeholder = 'Ide írjon szöveget...',
@@ -868,6 +802,36 @@ export const Wysiwyg = ({
         toggleTableModal();
     };
 
+    const withInlines = (editor: ReactEditor) => {
+        const { insertData, insertText, isInline, isElementReadOnly, isSelectable } = editor;
+
+        editor.isInline = (element: any) => ['link', 'button', 'badge'].includes(element.type) || isInline(element);
+
+        editor.isElementReadOnly = (element: any) => element.type === 'badge' || isElementReadOnly(element);
+
+        editor.isSelectable = (element: any) => element.type !== 'badge' && isSelectable(element);
+
+        editor.insertText = (text) => {
+            if (text && isUrl(text)) {
+                wrapLink(editor, text);
+            } else {
+                insertText(text);
+            }
+        };
+
+        editor.insertData = (data) => {
+            const text = data.getData('text/plain');
+
+            if (text && isUrl(text)) {
+                wrapLink(editor, text);
+            } else {
+                insertData(data);
+            }
+        };
+
+        return editor;
+    };
+
     const insertLink = (editor: Editor, url: string, text: string, color: string) => {
         if (editor.selection) {
             wrapLink(editor, url, text, color);
@@ -903,6 +867,102 @@ export const Wysiwyg = ({
             };
 
             Transforms.insertNodes(editor, youtube);
+        }
+    };
+
+    const isLinkActive = (editor: Editor) => {
+        const { selection } = editor;
+        if (!selection) return false;
+        const [match] = Array.from(
+            Editor.nodes(editor, {
+                at: Editor.unhangRange(editor, selection),
+                match: (n: any) => {
+                    return !Editor.isEditor(n) && n.type === 'link';
+                }
+            })
+        );
+
+        return !!match;
+    };
+
+    const isButtonActive = (editor: Editor) => {
+        const [button] = Editor.nodes(editor, {
+            match: (n: any) => !Editor.isEditor(n) && n.type === 'button'
+        });
+        return !!button;
+    };
+
+    const unwrapLink = (editor: Editor) => {
+        Transforms.unwrapNodes(editor, {
+            match: (n: any) => !Editor.isEditor(n) && n.type === 'link'
+        });
+    };
+
+    const unwrapButton = (editor: Editor) => {
+        Transforms.unwrapNodes(editor, {
+            match: (n: any) => !Editor.isEditor(n) && n.type === 'button'
+        });
+    };
+
+    const wrapLink = (editor: Editor, url: string, linkText?: string, linkColor?: string) => {
+        if (isLinkActive(editor)) {
+            unwrapLink(editor);
+        }
+
+        const { selection } = editor;
+        const isCollapsed = selection && Range.isCollapsed(selection);
+        const link: LinkElement = {
+            type: 'link',
+            url,
+            style: {
+                color: linkColor,
+                textDecoration: 'none'
+            },
+            linkText: linkText,
+            children: isCollapsed ? [{ text: linkText }] : []
+        };
+
+        if (isCollapsed) {
+            Transforms.insertNodes(editor, link);
+        } else {
+            Transforms.wrapNodes(editor, link, { split: true });
+            Transforms.collapse(editor, { edge: 'end' });
+        }
+    };
+
+    const wrapButton = (editor: Editor, CTALeiras: string, CTAFunc: string, CTAColor: string, CTABgColor: string) => {
+        if (isButtonActive(editor)) {
+            unwrapButton(editor);
+        }
+
+        const { selection } = editor;
+        const isCollapsed = selection && Range.isCollapsed(selection);
+        const link: LinkElement = {
+            type: 'link',
+            url: CTAFunc,
+            style: {
+                color: CTAColor
+            },
+            children: [{ text: CTALeiras }]
+        };
+        const button: any = {
+            type: 'button',
+            style: {
+                color: CTAColor,
+                backgroundColor: CTABgColor
+            },
+            CTAFunc: CTAFunc,
+            CTALeiras: CTALeiras,
+            CTAColor: CTAColor,
+            CTABgColor: CTABgColor,
+            children: isCollapsed ? [link] : []
+        };
+
+        if (isCollapsed) {
+            Transforms.insertNodes(editor, button);
+        } else {
+            Transforms.wrapNodes(editor, button, { split: true });
+            Transforms.collapse(editor, { edge: 'end' });
         }
     };
 
@@ -1081,6 +1141,80 @@ export const Wysiwyg = ({
         return imageExtensions.includes(ext);
     }; */
 
+    const withTables = (editor: Editor) => {
+        const { deleteBackward, deleteForward, insertBreak } = editor;
+
+        editor.deleteBackward = (unit) => {
+            const { selection } = editor;
+
+            if (selection && Range.isCollapsed(selection)) {
+                const [cell] = Editor.nodes(editor, {
+                    match: (n: any) => !Editor.isEditor(n) && n.type === 'table-cell'
+                });
+
+                if (cell) {
+                    const [, cellPath] = cell;
+                    const start = Editor.start(editor, cellPath);
+
+                    if (Point.equals(selection.anchor, start)) {
+                        return;
+                    }
+                }
+            }
+
+            deleteBackward(unit);
+        };
+
+        editor.deleteForward = (unit) => {
+            const { selection } = editor;
+
+            if (selection && Range.isCollapsed(selection)) {
+                const [cell] = Editor.nodes(editor, {
+                    match: (n: any) => !Editor.isEditor(n) && n.type === 'table-cell'
+                });
+
+                if (cell) {
+                    const [, cellPath] = cell;
+                    const end = Editor.end(editor, cellPath);
+
+                    if (Point.equals(selection.anchor, end)) {
+                        return;
+                    }
+                }
+            }
+
+            deleteForward(unit);
+        };
+
+        editor.insertBreak = () => {
+            const { selection } = editor;
+
+            if (selection) {
+                const [table] = Editor.nodes(editor, {
+                    match: (n: any) => !Editor.isEditor(n) && n.type === 'table'
+                });
+
+                if (table) {
+                    return;
+                }
+            }
+
+            insertBreak();
+        };
+
+        return editor;
+    };
+
+    const withImages = (editor: Editor) => {
+        const { isVoid } = editor;
+
+        editor.isVoid = (element: any) => {
+            return element.type === 'image' || element.type === 'image-center' || element.type === 'image-right' || element.type === 'image-left' ? true : isVoid(element);
+        };
+
+        return editor;
+    };
+
     const defaultModalValues = {
         tableClass: 'wysiwyg-table',
         rowNumber: '',
@@ -1098,6 +1232,8 @@ export const Wysiwyg = ({
         CTAFunc: ''
     };
 
+    const editor: any = useMemo(() => withImages(withTables(withInlines(withHistory(withReact(createEditor()))))), []);
+
     /*     const [editor] = useState(() => withReact(createEditor())); */
     const [fontSize, setFontSize] = useState('17px');
     const [imageModal, setImageModal] = useState(false);
@@ -1109,31 +1245,13 @@ export const Wysiwyg = ({
     const [image, setImage] = useState(defaultImage);
     const [format, setFormat] = useState('');
     const [modalValues, setModalvalues] = useState(defaultModalValues);
+    const [value, setValue] = useState(initialValue);
+    const [selection, setSelection] = useState(null);
     const i = [
         { id: 0, src: 'https://igyteljesazelet.hu/sites/default/files/styles/widescreen/public/2021-01/cicatestbesz2.jpg?itok=q7vFnOSX', alt: 'cica2' },
         { id: 1, src: 'https://behir.hu/web/content/media/2021/06/cica-600x338.jpg', alt: 'cica1' }
     ];
     const [images] = useState(i);
-
-    /*  const useForceUpdate = () => {
-        const [, setState] = useState<number>(0);
-
-        const forceUpdate = useCallback(() => {
-            setState((n) => n + 1);
-        }, []);
-
-        return forceUpdate;
-    };
-
-    const forceUpdate = useForceUpdate();
-    useEffect(() => {
-        editor.children = value;
-        forceUpdate();
-    }, [editor, value, forceUpdate]); */
-
-    /* useEffect(() => {
-        editor.children = value;
-    }, [value]); */
 
     const toggleImageModal = (format?: any) => {
         setImageModal(!imageModal);
@@ -2119,7 +2237,16 @@ export const Wysiwyg = ({
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
-            <Slate editor={editor} onChange={onChange} value={value}>
+            <Slate
+                initialValue={defaultValue}
+                selection={selection}
+                editor={editor}
+                onChange={(value: CustomElement[], selection: any) => {
+                    setValue(value);
+                    setSelection(selection);
+                }}
+                value={value}
+            >
                 <Toolbar className="wysiwyg-editor-toolbar">
                     <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
                     <MarkButton format="italic" icon="fa fa-italic" colors={colors} />
