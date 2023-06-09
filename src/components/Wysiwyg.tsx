@@ -3,7 +3,7 @@ import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
 import { Transforms, Editor, Element as SlateElement, Text, Range, Point, BaseText, BaseElement, Ancestor, NodeInterface, createEditor } from 'slate';
-import { Editable, withReact, ReactEditor } from 'slate-react';
+import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
 import { withHistory } from 'slate-history';
 import isUrl from 'is-url';
 /* import imageExtensions from 'image-extensions'; */
@@ -65,7 +65,12 @@ export interface CustomText extends BaseText {
 
 type onUploadType = (file: File) => void;
 
-export declare const Slate: (props: { children: React.ReactNode; ref: any; editor: ReactEditor; value: CustomElement[]; onChange?: ((v: CustomElement[]) => void) | undefined }) => JSX.Element;
+/* declare module 'slate' {
+    export interface CustomTypes {
+        Editor: { children: React.ReactNode; ref: any; editor: ReactEditor; value: CustomElement[]; onChange?: ((v: CustomElement[]) => void) | undefined }
+    }
+}  */
+/* { children: React.ReactNode; ref: any; editor: ReactEditor; value: CustomElement[]; onChange?: ((v: CustomElement[]) => void) | undefined }) => JSX.Element; */
 
 interface WysiwygProps {
     className?: string;
@@ -2187,7 +2192,8 @@ export const Wysiwyg = forwardRef((props: WysiwygProps, ref) => {
         <div style={{ display: 'inline-grid', width: '100%' }}>
             <Slate
                 editor={editor}
-                value={value}
+                initialValue={value}
+                // @ts-ignore
                 ref={ref}
                 onChange={(v: any) => {
                     if (onChange) {
