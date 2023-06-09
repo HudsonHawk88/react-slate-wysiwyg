@@ -233,7 +233,7 @@ const defaultColors = {
 
 const defaultStyle = { border: '1px black solid', padding: '10px' };
 
-export let edittor = useRef(null);
+export let edittor = useRef('');
 
 const defaultImage: Image = {
     src: '',
