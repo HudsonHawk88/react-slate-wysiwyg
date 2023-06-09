@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo, createContext, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useMemo, createContext, useEffect, createRef } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -233,7 +233,7 @@ const defaultColors = {
 
 const defaultStyle = { border: '1px black solid', padding: '10px' };
 
-export let edittor = useRef('');
+export const edittor = createRef();
 
 const defaultImage: Image = {
     src: '',
