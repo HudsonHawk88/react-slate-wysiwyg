@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo, createContext } from 'react';
+import React, { useCallback, useState, useMemo, createContext, useEffect } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -64,16 +64,15 @@ export interface CustomText extends BaseText {
 
 type onUploadType = (file: File) => void;
 
-export declare const Slate: (props: { children: React.ReactNode; editor: ReactEditor; value: CustomElement[]; selection: any; onChange?: ((editor: ReactEditor) => void) | undefined }) => JSX.Element;
+export declare const Slate: (props: { children: React.ReactNode; editor: ReactEditor; value: CustomElement[]; onChange?: ((v: CustomElement[]) => void) | undefined }) => JSX.Element;
 
 interface WysiwygProps {
     className?: string;
     key?: string;
     id?: string | undefined;
     value: CustomElement[];
-    initialValue: CustomElement[];
-    defaultValue?: CustomElement[];
-    onChange: (editor: ReactEditor) => void;
+    onChange?: (v: CustomElement[]) => void;
+    setValue?: (v: CustomElement[]) => void;
     customButtons?: Array<[]>;
     colors?: Object;
     reserved?: Boolean;
@@ -633,11 +632,9 @@ export const Wysiwyg = ({
     uploadType = 'link',
     customButtons = [],
     onChange,
+    setValue,
     onUpload
 }: WysiwygProps) => {
-    const [children, setChildren] = useState([]);
-    const [selection, setSelection] = useState(null);
-
     const CustomButton = (props: any) => {
         const { format, children, colors } = props;
         return (
@@ -2170,15 +2167,21 @@ export const Wysiwyg = ({
         );
     };
 
+    useEffect(() => {
+        if (setValue) {
+            setValue(editor.children);
+        }
+    }, []);
+
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
             <Slate
                 editor={editor}
-                selection={selection}
-                value={children}
-                onChange={(editor: any) => {
-                    setChildren(editor.children);
-                    setSelection(editor.selection);
+                value={value}
+                onChange={(v: CustomElement[]) => {
+                    if (onChange) {
+                        onChange(editor);
+                    }
                 }}
             >
                 <Toolbar className="wysiwyg-editor-toolbar">
