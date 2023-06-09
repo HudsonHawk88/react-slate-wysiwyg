@@ -2173,9 +2173,9 @@ export const Wysiwyg = ({
     useEffect(() => {
         if (editor && editor.children && onChange) {
             console.log('EDITOR CHILDREN, VALUE: ', editor.children, value);
-            onChange(value);
+            editor.children = value;
         }
-    }, [editor.children]);
+    }, [value]);
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
