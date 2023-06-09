@@ -1,637 +1,26 @@
-import React, { useCallback, useState, useMemo, createContext, useRef } from 'react';
-import escapeHtml from 'escape-html';
-import { jsx } from 'slate-hyperscript';
+import React, { useCallback, useState, useMemo, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
-import { Transforms, Editor, Element as SlateElement, Text, Range, Point, BaseText, BaseElement, Ancestor, NodeInterface, createEditor } from 'slate';
+import { Transforms, Editor, Element as SlateElement, Range, Point, createEditor } from 'slate';
 import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
 import { withHistory } from 'slate-history';
 import isUrl from 'is-url';
 /* import imageExtensions from 'image-extensions'; */
 import { css } from '@emotion/css';
 import { Toolbar, ToolbarButton, Icon } from './components';
-export const SlateContext = createContext<[ReactEditor] | null>(null);
-export const EditorContext = createContext<ReactEditor | null>(null);
-export const SelectedContext = createContext(false);
-export const FocusedContext = createContext(false);
-/**
- * Get the current `focused` state of the editor.
- */
-
-// INTERFACES AND TYPES
-
-export interface CustomElement extends BaseElement {
-    type?: string;
-    className?: string;
-    align?: string;
-    style?: object;
-    children: CustomElement[] | CustomText[];
-}
-
-export interface CustomNode extends NodeInterface {
-    TEXT_NODE: any;
-    ELEMENT_NODE: any;
-}
-
-export declare type Node = ReactEditor | Element | Text;
-export type CustomImage = { type: string; url: string; children?: EmptyText[] };
-export type LinkElement = { type: string; url: string; style?: object; linkText?: string; children: CustomText[] | CustomElement[] | any };
-export type YoutubeElement = { type: string; youtubeUrl: string; height: string | number; width: string | number; children: CustomText[]; style: object };
-export type ButtonElement = { type: string; CTAFunc?: string; CTAColor?: string; CTABgColor?: string; CTALeiras: string; style?: object; color?: string; bgColor?: string; children?: LinkElement[] };
-export interface CustomText extends BaseText {
-    type?: string;
-    bold?: boolean | undefined;
-    italic?: boolean | undefined;
-    underline?: boolean | undefined;
-    code?: boolean | undefined;
-    style?: object | undefined;
-    align?: string;
-    children?: any;
-}
-
-/* export interface CustomEditor extends ReactEditor {
-    insertData: VoidFunction,
-    insertTextData: Function,
-    insertFragmentData: Function,
-    setFragmentData: Function,
-    hasRange: Function,
-    children: any;
-}; */
-
-/* export interface CustomReactEditor extends ReactEditor {
-    type: string;
-    isElementReadOnly: Function;
-    isSelectable: Function;
-} */
-
-type onUploadType = (file: File) => void;
-
-/* declare module 'slate' {
-    export interface CustomTypes {
-        Editor: { children: React.ReactNode; ref: any; editor: ReactEditor; value: CustomElement[]; onChange?: ((v: CustomElement[]) => void) | undefined }
-    }
-}  */
-/* { children: React.ReactNode; ref: any; editor: ReactEditor; value: CustomElement[]; onChange?: ((v: CustomElement[]) => void) | undefined }) => JSX.Element; */
-
-interface WysiwygProps {
-    className?: string;
-    key?: string;
-    id?: string | undefined;
-    value: CustomElement[];
-    onChange?: (v: CustomElement[]) => void;
-    customButtons?: Array<[]>;
-    colors?: Object;
-    reserved?: Boolean;
-    placeholder?: string;
-    uploadType?: 'pc' | 'link';
-    onUpload?: onUploadType;
-}
-
-interface FormatButtonProps {
-    format: string;
-    icon: any;
-    colors?: object;
-}
-
-type Format = string;
-
-interface Image {
-    src: string;
-    alt?: string;
-    width?: string;
-    height?: string;
-}
-
-interface AccessNode {
-    keyName: keyof CustomElement; // 👈️ one of Employee's keys
-}
-
-export type EmptyText = {
-    text: string;
-};
-
-export type ImageElement = {
-    type: string;
-    src: string | ArrayBuffer;
-    children?: EmptyText[] | CustomText[] | CustomElement[] | any;
-    style: object | undefined;
-};
-
-// DEFAULT VALUES
-
-/* export interface CustomValue extends Descendant {
-    type?: string;
-    children?: CustomElement[]
-    style?: object | string
-} */
-
-export const initialValue: CustomElement[] = [
-    {
-        type: 'align-left',
-        children: [{ text: '', style: { fontSize: '17px' } }]
-    }
-];
-
-export const setEditorValue = (value: any, editor: ReactEditor) => {
-    value = editor.children;
-};
-
-let n = 0;
-
-/**
- * A class that keeps track of a key string. We use a full class here because we
- * want to be able to use them as keys in `WeakMap` objects.
- */
-
-export class Key {
-    id: string;
-
-    constructor() {
-        this.id = `${n++}`;
-    }
-}
-
-/**
- * Two weak maps that allow us rebuild a path given a node. They are populated
- * at render time such that after a render occurs we can always backtrack.
- */
-
-export const NODE_TO_INDEX: WeakMap<CustomNode, number> = new WeakMap();
-export const NODE_TO_PARENT: WeakMap<CustomNode, Ancestor> = new WeakMap();
-
-/**
- * Weak maps that allow us to go between Slate nodes and DOM nodes. These
- * are used to resolve DOM event-related logic into Slate actions.
- */
-
-export const EDITOR_TO_ELEMENT: WeakMap<ReactEditor, HTMLElement> = new WeakMap();
-export const EDITOR_TO_PLACEHOLDER: WeakMap<Editor, string> = new WeakMap();
-export const ELEMENT_TO_NODE: WeakMap<HTMLElement, CustomNode> = new WeakMap();
-export const KEY_TO_ELEMENT: WeakMap<Key, HTMLElement> = new WeakMap();
-export const NODE_TO_ELEMENT: WeakMap<CustomNode, HTMLElement> = new WeakMap();
-export const NODE_TO_KEY: WeakMap<CustomNode, Key> = new WeakMap();
-
-/**
- * Weak maps for storing editor-related state.
- */
-
-export const IS_READ_ONLY: WeakMap<ReactEditor, boolean> = new WeakMap();
-export const IS_FOCUSED: WeakMap<ReactEditor, boolean> = new WeakMap();
-export const IS_DRAGGING: WeakMap<ReactEditor, boolean> = new WeakMap();
-export const IS_CLICKING: WeakMap<ReactEditor, boolean> = new WeakMap();
-
-/**
- * Weak map for associating the context `onChange` prop with the plugin.
- */
-
-export const EDITOR_TO_ON_CHANGE = new WeakMap<ReactEditor, (children: CustomElement[], selection: Range | null) => void>();
-
-/**
- * Symbols.
- */
-
-export const PLACEHOLDER_SYMBOL = Symbol('placeholder') as unknown as string;
-
-/* export const Slate = (props: {
-    editor: ReactEditor;
-    initialValue: CustomElement[];
-    value: CustomElement[];
-    selection: Range | null;
-    children: React.ReactNode;
-    onChange: (children: CustomElement[], selection: Range | null) => void;
-    [key: string]: any;
-}) => {
-    const { editor, children, onChange, value, selection, ...rest } = props;
-    const context: [ReactEditor] = useMemo(() => {
-        editor.children = value;
-        editor.selection = selection;
-        return [editor];
-    }, [value, selection, ...Object.values(rest)]);
-
-    EDITOR_TO_ON_CHANGE.set(editor, onChange);
-
-    console.log(context, editor);
-
-    return (
-        <SlateContext.Provider value={context}>
-            <EditorContext.Provider value={editor}>
-                <FocusedContext.Provider value={ReactEditor.isFocused(editor)}>{children}</FocusedContext.Provider>
-            </EditorContext.Provider>
-        </SlateContext.Provider>
-    );
-}; */
-
-const defaultColors = {
-    normal: {
-        activeColor: '#0f0',
-        color: '#000'
-    },
-    reverse: {
-        activeColor: 'black',
-        color: '#0f0'
-    }
-};
-
-const defaultStyle = { border: '1px black solid', padding: '10px' };
+import { WysiwygProps, CustomText, Image, LinkElement, YoutubeElement, FormatButtonProps, AccessNode } from './InterfacesAndTypes';
+import { initialValue, defaultColors, defaultImage, defaultStyle } from './InitilValue';
 
 export let edittor: any = [];
 
-const defaultImage: Image = {
-    src: '',
-    alt: '',
-    width: '',
-    height: ''
+export const setEditorValue = (value: any) => {
+    if (edittor && edittor.current) {
+        edittor.children = value;
+    }
 };
 
 const LIST_TYPES = ['numbered-list', 'bulleted-list'];
 const TEXT_ALIGN_TYPES = ['align-left', 'align-center', 'align-right', 'align-justify'];
 /* const HEADING_TYPES = ['heading-one', 'heading-2', 'heading-3', 'heading-4', 'heading-5']; */
-/* const IMAGE_ALIGN_TYPES = [ 'left', 'center', 'right' ]; */
-/* const IMAGE_TYPES = [ 'image', 'image-center' ];
-const IMAGE_ALIGN_TYPES = [ 'image-left', 'image-right' ]; */
-
-const getHtmlStyleKey = (styleKey: string) => {
-    const key = styleKey || '';
-    const length = key.length;
-    let upperPosition: number = 0;
-    let hasUpper = false;
-    for (let i = 0; i < length; i++) {
-        if (key.charAt(i) === key.charAt(i).toUpperCase()) {
-            hasUpper = true;
-            upperPosition = key.indexOf(key.charAt(i));
-            break;
-        }
-    }
-
-    let newKey = hasUpper ? key.toLowerCase().substring(0, upperPosition) + '-' + key.toLowerCase().substring(upperPosition, key.length) : key;
-
-    return newKey;
-};
-
-const getStyleFromHtmlStyle = (style: string) => {
-    const key: any = style || {};
-    const newStyle = {};
-    Object.keys(key).forEach((s) => {
-        if (key[s] !== '' && isNaN(parseInt(s))) {
-            Object.assign(newStyle, { [s]: key[s] });
-        }
-    });
-
-    return newStyle;
-};
-
-function getStilus(style: any) {
-    let stilus: string = '';
-
-    if (style) {
-        for (const [key] of Object.entries(style)) {
-            if (style[key]) {
-                stilus = stilus.concat(`${getHtmlStyleKey(key)}: ${style[key]};`);
-            }
-        }
-    }
-    return `${stilus}`;
-}
-
-const getNode = (node: any, ch?: any) => {
-    const children = ch ? ch.join('') : serialize(node);
-
-    switch (node.type) {
-        case 'quote':
-            return `<blockquote><p>${children}</p></blockquote>`;
-
-        case 'paragraph': {
-            const style = getStilus(node.style);
-            if (style !== '') {
-                return `<p style="${style}">${children}</p>`;
-            } else {
-                return `<p>${children}</p>`;
-            }
-        }
-
-        case 'align-left': {
-            const style = getStilus(node.style);
-            if (style !== '') {
-                return `<p style="${style}">${children}</p>`;
-            } else {
-                return `<p>${children}</p>`;
-            }
-        }
-        case 'align-center': {
-            const style = getStilus(node.style);
-            if (style !== '') {
-                return `<p style="${style}">${children}</p>`;
-            } else {
-                return `<p>${children}</p>`;
-            }
-        }
-        case 'align-right': {
-            const style = getStilus(node.style);
-            if (style !== '') {
-                return `<p style="${style}">${children}</p>`;
-            } else {
-                return `<p>${children}</p>`;
-            }
-        }
-        case 'align-justify': {
-            const style = getStilus(node.style);
-            if (style !== '') {
-                return `<p style="${style}">${children}</p>`;
-            } else {
-                return `<p>${children}</p>`;
-            }
-        }
-        case 'block-quote':
-            const style = getStilus(node.style);
-            if (style) {
-                return `<blockquote style="${style}">${children}</blockquote>`;
-            } else {
-                return `<blockquote>${children}</blockquote>`;
-            }
-        case 'bulleted-list': {
-            const c: string = getNode(node.children);
-            const style = getStilus(node.style);
-            if (style) {
-                return `<ul style="${style}">${c}</ul>`;
-            } else {
-                return `<ul>${c}</ul>`;
-            }
-        }
-        case 'heading-1': {
-            const style = getStilus(node.style);
-            if (style) {
-                return `<h1 style="${style}">${children}</h1>`;
-            } else {
-                return `<h1>${children}</h1>`;
-            }
-        }
-        case 'heading-2': {
-            const style = getStilus(node.style);
-            if (style) {
-                return `<h2 style="${style}">${children}</h2>`;
-            } else {
-                return `<h2>${children}</h2>`;
-            }
-        }
-        case 'heading-3': {
-            const style = getStilus(node.style);
-            if (style) {
-                return `<h3 style="${style}">${children}</h3>`;
-            } else {
-                return `<h3>${children}</h3>`;
-            }
-        }
-        case 'heading-4': {
-            const style = getStilus(node.style);
-            if (style) {
-                return `<h4 style="${style}">${children}</h4>`;
-            } else {
-                return `<h4>${children}</h4>`;
-            }
-        }
-        case 'heading-5': {
-            const style = getStilus(node.style);
-            if (style) {
-                return `<h5 style="${style}">${children}</h5>`;
-            } else {
-                return `<h5>${children}</h5>`;
-            }
-        }
-        case 'list-item': {
-            const style = getStilus(node.style);
-            if (style) {
-                return `<li style="${style}">${children}</li>`;
-            } else {
-                return `<li>${children}</li>`;
-            }
-        }
-        case 'numbered-list': {
-            const style = getStilus(node.style);
-            const c: string = getNode(node.children);
-            if (style) {
-                return `<ol style="${style}">${c}</ol>`;
-            } else {
-                return `<ol>${c}</ol>`;
-            }
-        }
-        case 'image': {
-            const src = node.src;
-            const alt = node.alt;
-            const style = getStilus(node.style);
-            return `<img src="${src}" alt="${alt}" style="${style}" />`;
-        }
-        case 'image-center': {
-            const src = node.src;
-            const alt = node.alt;
-            const style = getStilus(node.style);
-            return `<img src="${src}" alt="${alt}" style="${style}" />`;
-        }
-        case 'image-left': {
-            const src = node.src;
-            const alt = node.alt;
-            const style = getStilus(node.style);
-            return `<img src="${src}" alt="${alt}" style="${style}" />`;
-        }
-        case 'image-right': {
-            const src = node.src;
-            const alt = node.alt;
-            const style = getStilus(node.style);
-            return `<img src="${src}" alt="${alt}" style="${style}" />`;
-        }
-        case 'div': {
-            let child: any = serialize(node.children).toString();
-            if (child) {
-                child = child.replaceAll(',', '');
-            }
-            const style = getStilus(node.style);
-            if (style) {
-                return `<div style="${style}">${child}</div>`;
-            } else {
-                return `<div>${child}</div>`;
-            }
-        }
-
-        case 'table': {
-            const style = `${getStilus(node.style)}` || '';
-            const className = node.className || '';
-            return `<table class="${className}" style="${style}"><tbody>${children}</tbody></table>`;
-        }
-
-        case 'table-left': {
-            const style = `${getStilus(node.style)}` || '';
-            const className = node.className || '';
-            return `<table class="${className}" style="${style}"><tbody>${children}</tbody></table>`;
-        }
-
-        case 'table-center': {
-            const style = `${getStilus(node.style)}` || '';
-            const className = node.className || '';
-            return `<table class="${className}" style="${style}"><tbody>${children}</tbody></table>`;
-        }
-
-        case 'table-right': {
-            const style = `${getStilus(node.style)}` || '';
-            const className = node.className || '';
-            return `<table class="${className}" style="${style}"><tbody>${children}</tbody></table>`;
-        }
-
-        case 'table-row': {
-            const style = `${getStilus(node.style)}` || '';
-            const c: string = getNode(node.children);
-            return `<tr style="${style}">${c}</tr>`;
-        }
-
-        case 'table-cell': {
-            const style = `${getStilus(node.style)}` || '';
-            return `<td style="${style}">${children}</td>`;
-        }
-
-        case 'link': {
-            const style = `${getStilus(node.style)}` || '';
-            Object.assign(style, { textDecoration: 'none' });
-            const href = node.url;
-            const text = node.linkText;
-            return `<a style="${style}" href="${href}" target="_blank">${text}</a>`;
-        }
-
-        case 'button': {
-            const style: any = `${getStilus(node.style)}` || '';
-            const func = node.CTAFunc;
-            const text = node.CTALeiras;
-            return `<button style="${style}"><a style="${`color: ${node.CTAColor}; text-decoration: none`}" href=${func} target="_blank">${text}</a></button>`;
-        }
-
-        case 'embeded': {
-            const style = `${getStilus(node.style)}` || '';
-            const width = node.width;
-            const height = node.height;
-            const src = node.youtubeUrl;
-            return `<iframe style="${style}" width="${width}" height="${height}" src="${src}" allowFullScreen></iframe>`;
-        }
-
-        default: {
-            return children;
-        }
-    }
-};
-
-export const serialize = (nodes: CustomElement[] | Node[]) => {
-    let result = nodes.map((node: any): string[] => {
-        const children =
-            node.children &&
-            node.children.map((nn: CustomText): any => {
-                if (Text.isText(nn)) {
-                    let string = escapeHtml(nn.text);
-                    if (nn.bold) {
-                        string = `<strong>${string}</strong>`;
-                    }
-                    if (nn.code) {
-                        string = `<code>${string}</code>`;
-                    }
-                    if (nn.italic) {
-                        string = `<em>${string}</em>`;
-                    }
-                    if (nn.underline) {
-                        string = `<u>${string}</u>`;
-                    }
-                    return string;
-                } else {
-                    const ch = getNode(nn, nn['children']);
-                    return ch;
-                }
-            });
-        const ch = getNode(node, children);
-        return ch;
-    });
-    let serialized = result.join('');
-    return serialized;
-};
-
-export const getElementsFromHtml = (html: string) => {
-    const el = new DOMParser().parseFromString(html, 'text/html').body;
-    return el;
-};
-
-export const deserialize = (el: any, markAttributes: CustomText | object = {}): any => {
-    const style: any = getStyleFromHtmlStyle(el.style);
-    if (el.nodeType === Node.TEXT_NODE) {
-        return jsx('text', markAttributes, el.textContent);
-    } else if (el.nodeType !== Node.ELEMENT_NODE) {
-        return null;
-    }
-
-    const nodeAttributes = { ...markAttributes };
-
-    // define attributes for text nodes
-    switch (el.nodeName) {
-        case 'STRONG':
-            nodeAttributes.bold = true;
-        case 'ITALIC': {
-            nodeAttributes.italic = true;
-        }
-        case 'UNDERLINED': {
-            nodeAttributes.underline = true;
-        }
-        case 'CODE': {
-            nodeAttributes.code = true;
-        }
-    }
-
-    const children = Array.from(el.childNodes)
-        .map((node) => deserialize(node, nodeAttributes))
-        .flat();
-
-    if (children.length === 0) {
-        children.push(jsx('text', nodeAttributes, ''));
-    }
-
-    switch (el.nodeName) {
-        case 'BODY':
-            return jsx('fragment', {}, children);
-        case 'BR':
-            return '\n';
-        case 'BLOCKQUOTE':
-            return jsx('element', { type: 'block-quote', style: style }, children);
-        case 'H1':
-            return jsx('element', { type: 'heading-1', style: style }, children);
-        case 'H2':
-            return jsx('element', { type: 'heading-2', style: style }, children);
-        case 'H3':
-            return jsx('element', { type: 'heading-3', style: style }, children);
-        case 'H4':
-            return jsx('element', { type: 'heading-4', style: style }, children);
-        case 'H5':
-            return jsx('element', { type: 'heading-5', style: style }, children);
-        case 'P':
-            return jsx('element', { type: `align-${style.textAlign ? style.textAlign : 'left'}`, style: style }, children);
-        case 'A':
-            return jsx('element', { type: 'link', url: el.href, style: style, linkText: el.innerText ? el.innerText : '' }, children);
-        case 'BUTTON':
-            const buttonChildren = el.children[0];
-            const href = buttonChildren.href || '';
-            const text = buttonChildren.innerText || '';
-            const textColor = style.color || 'black';
-            const bgColor = style.backgroundColor || 'white';
-            return jsx('element', { type: 'button', CTAFunc: href, CTALeiras: text, CTAColor: textColor, CTABgColor: bgColor, style: style }, children);
-        case 'IMG':
-            return jsx('element', { type: `image`, style: style, src: el.src, alt: el.alt }, children);
-        case 'IFRAME':
-            return jsx('element', { type: 'embeded', style: style, youtubeUrl: el.src, height: el.height, width: el.width }, children);
-        case 'TABLE':
-            return jsx('element', { type: 'table', className: el.class, style: style }, children);
-        case 'TR':
-            return jsx('element', { type: 'table-row', style: style }, children);
-        case 'TD':
-            return jsx('element', { type: 'table-cell', style: style }, children);
-        case 'UL':
-            return jsx('element', { type: 'bulleted-list', style: style }, children);
-        case 'OL':
-            return jsx('element', { type: 'numbered-list', style: style }, children);
-        case 'LI':
-            return jsx('element', { type: 'list-item', style: style }, children);
-        default:
-            return children;
-    }
-};
 
 export const Wysiwyg = ({
     className = 'react-slate-wysiwyg',
@@ -1019,22 +408,6 @@ export const Wysiwyg = ({
         );
     };
 
-    /* const AddLinkButton = () => {
-        return (
-          <Button
-            active={isLinkActive(editor)}
-            onMouseDown={event => {
-              event.preventDefault()
-              const url = window.prompt('Enter the URL of the link:')
-              if (!url) return
-              insertLink(editor, url)
-            }}
-          >
-            link
-          </Button>
-        )
-      } */
-
     const RemoveLinkButton = (props: FormatButtonProps) => {
         const { format, icon } = props;
 
@@ -1185,14 +558,6 @@ export const Wysiwyg = ({
 
     const editor: any = useMemo(() => withImages(withTables(withInlines(withHistory(withReact(createEditor()))))), []);
     edittor = useRef(editor);
-
-    /* const refreshValue = (value: CustomElement[]) => {
-        if (value) {
-            editor.children = value;
-        }
-    } */
-
-    /*     const [editor] = useState(() => withReact(createEditor())); */
     const [fontSize, setFontSize] = useState('17px');
     const [imageModal, setImageModal] = useState(false);
     const [tableModal, setTableModal] = useState(false);
@@ -1203,17 +568,10 @@ export const Wysiwyg = ({
     const [image, setImage] = useState(defaultImage);
     const [format, setFormat] = useState('');
     const [modalValues, setModalvalues] = useState(defaultModalValues);
-    /*     const [value, setValue] = useState(initialValue);
-    const [selection, setSelection] = useState(null); */
-    const i = [
-        { id: 0, src: 'https://igyteljesazelet.hu/sites/default/files/styles/widescreen/public/2021-01/cicatestbesz2.jpg?itok=q7vFnOSX', alt: 'cica2' },
-        { id: 1, src: 'https://behir.hu/web/content/media/2021/06/cica-600x338.jpg', alt: 'cica1' }
-    ];
-    const [images] = useState(i);
+    const [images] = useState([]);
 
     const toggleImageModal = (format?: any) => {
         setImageModal(!imageModal);
-        setImage(images[0]);
         if (format) {
             setFormat(format);
         }
@@ -1740,7 +1098,7 @@ export const Wysiwyg = ({
                             </div>
                             <div>
                                 {images &&
-                                    images.map((i) => {
+                                    images.map((i: any) => {
                                         return (
                                             <div key={i.id}>
                                                 <img src={i.src} alt={i.alt} />
@@ -1945,7 +1303,7 @@ export const Wysiwyg = ({
         return !!match;
     }
 
-    const isBlockActive = (editor: Editor, format: Format, blockType: any = 'type') => {
+    const isBlockActive = (editor: Editor, format: string, blockType: any = 'type') => {
         const obj: AccessNode = { keyName: blockType };
         const { selection } = editor;
         if (!selection) return false;
@@ -1974,13 +1332,6 @@ export const Wysiwyg = ({
     function toggleBlock(editor: Editor, format: any) {
         const isActive = isBlockActive(editor, format);
         const isList = LIST_TYPES.includes(format);
-        /*   const { selection } = editor;
-        let selected;
-        if (selection !== null && selection.anchor !== null) {
-            selected = editor.children[selection.anchor.path[0]];
-        } else {
-            selected = {};
-        } */
 
         Transforms.unwrapNodes(editor, {
             match: (n: any) => {
@@ -2120,15 +1471,6 @@ export const Wysiwyg = ({
         );
     };
 
-    /*     const CTAButton = (props: FormatButtonProps) => {
-        const { icon } = props;
-        return (
-            <ToolbarButton className="cta_button" onClick={() => toggleCTAModal()}>
-                <Icon buttonIcons={[icon]} className={icon} />
-            </ToolbarButton>
-        );
-    }; */
-
     /* const EmojiButton = (props: FormatButtonProps) => {
         const { icon } = props;
         return (
@@ -2183,15 +1525,6 @@ export const Wysiwyg = ({
         );
     };
 
-    /*     useEffect(() => {
-        // @ts-ignore
-        if (edittor && editor.current) {
-            console.log('EDITOR CHILDREN, VALUE: ', editor.children, value, edittor.current);
-            editor.children = edittor.current;
-            // @ts-ignore
-        }
-    }, [edittor.current]); */
-
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
             <Slate
@@ -2241,22 +1574,7 @@ export const Wysiwyg = ({
                     {/* <EmojiButton format="emoji" icon="fa-regular fa-face-smile" /> */}
                 </Toolbar>
                 <Toolbar className="wysiwyg-editor-toolbar">{renderCustomButtons()}</Toolbar>
-                <Editable
-                    id={id}
-                    style={defaultStyle}
-                    className={className}
-                    placeholder={placeholder}
-                    /*  onKeyDown={event => {
-                        if (event.key === 'Enter') {
-                        // Prevent the ampersand character from being inserted.
-                        event.preventDefault()
-                        // Execute the `insertText` method when the event occurs.
-                        Editor.insertBreak(editor)
-                        }
-                    }} */
-                    renderLeaf={renderLeaf}
-                    renderElement={renderElement}
-                />
+                <Editable id={id} style={defaultStyle} className={className} placeholder={placeholder} renderLeaf={renderLeaf} renderElement={renderElement} />
             </Slate>
             <div>
                 {imageModal ? renderImageModal() : ''}
@@ -2269,21 +1587,3 @@ export const Wysiwyg = ({
         </div>
     );
 };
-
-/* export const Wysiwyg = ({
-    className = 'react-slate-wysiwyg',
-    id,
-    value = initialValue,
-    colors = defaultColors,
-    reserved = false,
-    placeholder = 'Ide írjon szöveget...',
-    uploadType = 'link',
-    customButtons = [],
-    onChange,
-    onUpload,
-
-}: WysiwygProps) => {
-    
-};
-
-export {  } */
