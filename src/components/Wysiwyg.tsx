@@ -2171,8 +2171,8 @@ export const Wysiwyg = ({
     };
 
     useEffect(() => {
-        if (editor) {
-            setEditorValue(value, editor);
+        if (onChange) {
+            onChange(value);
         }
     }, [editor]);
 
