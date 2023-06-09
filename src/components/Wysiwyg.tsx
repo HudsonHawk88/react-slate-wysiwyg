@@ -2183,10 +2183,13 @@ export const Wysiwyg = forwardRef((props: WysiwygProps, ref) => {
 
     useEffect(() => {
         if (editor && editor.children && onChange) {
-            console.log('EDITOR CHILDREN, VALUE: ', editor.children, value);
-            editor.children = value;
+            // @ts-ignore
+            console.log('EDITOR CHILDREN, VALUE: ', editor.children, value, ref.current);
+            // @ts-ignore
+            editor.children = ref.current;
         }
-    }, [value]);
+        // @ts-ignore
+    }, [value, ref.current]);
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
