@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo, createContext, useEffect, createRef } from 'react';
+import React, { useCallback, useState, useMemo, createContext, useEffect, useRef } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -233,7 +233,7 @@ const defaultColors = {
 
 const defaultStyle = { border: '1px black solid', padding: '10px' };
 
-export const edittor = createRef();
+export const edittor = useRef(initialValue);
 
 const defaultImage: Image = {
     src: '',
@@ -2183,22 +2183,18 @@ export const Wysiwyg = ({
     };
 
     useEffect(() => {
-        if (editor && editor.children && onChange && edittor && edittor.current) {
-            // @ts-ignore
-            console.log('EDITOR CHILDREN, VALUE: ', editor.children, value, edittor.current);
-            // @ts-ignore
-            /* editor.children = editor.current; */
-        }
         // @ts-ignore
-    }, [value, edittor.current]);
+        console.log('EDITOR CHILDREN, VALUE: ', editor.children, value, edittor.current);
+        edittor.current = editor.children;
+        // @ts-ignore
+        /* editor.children = editor.current; */
+    }, [editor.children]);
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
             <Slate
                 editor={editor}
                 initialValue={value}
-                // @ts-ignore
-                ref={edittor}
                 onChange={(v: any) => {
                     if (onChange) {
                         onChange(v);
