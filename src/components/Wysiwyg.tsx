@@ -14,7 +14,7 @@ export let Editor: any = [];
 
 export const setEditorValue = (value: any, e: any) => {
     if (e && e.current) {
-        e.children = value;
+        e.current.children = value;
     }
 };
 
