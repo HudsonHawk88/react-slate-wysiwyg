@@ -233,7 +233,7 @@ const defaultColors = {
 
 const defaultStyle = { border: '1px black solid', padding: '10px' };
 
-export const edittor = useRef(initialValue);
+export let edittor: any = [];
 
 const defaultImage: Image = {
     src: '',
@@ -644,6 +644,7 @@ export const Wysiwyg = ({
     customButtons = [],
     onChange
 }: WysiwygProps) => {
+    edittor = useRef(initialValue);
     const CustomButton = (props: any) => {
         const { format, children, colors } = props;
         return (
