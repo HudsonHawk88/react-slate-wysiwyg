@@ -34,9 +34,10 @@ export const Wysiwyg = ({
     onChange
 }: WysiwygProps) => {
     const CustomButton = (props: any) => {
-        const { format, children, colors } = props;
+        const { format, children, colors, key } = props;
         return (
             <ToolbarButton
+                key={key}
                 style={{ width: 'fit-content' }}
                 reserved={reserved}
                 className="custom_button"
@@ -54,9 +55,9 @@ export const Wysiwyg = ({
     const renderCustomButtons = () => {
         return (
             customButtons.length > 0 &&
-            customButtons.map((button: any) => {
+            customButtons.map((button: any, index: number) => {
                 return (
-                    <CustomButton colors={button.colors || colors} format={button.format}>
+                    <CustomButton colors={button.colors || colors} key={index.toString()} format={button.format}>
                         {button.text}
                     </CustomButton>
                 );
