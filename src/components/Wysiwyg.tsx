@@ -10,11 +10,11 @@ import { Toolbar, ToolbarButton, Icon } from './components';
 import { WysiwygProps, CustomText, Image, LinkElement, YoutubeElement, FormatButtonProps, AccessNode } from './InterfacesAndTypes';
 import { initialValue, defaultColors, defaultImage, defaultStyle } from './InitilValue';
 
-let Editor: any = [];
+export let Editor: any = [];
 
-export const setEditorValue = (value: any) => {
-    if (Editor && Editor.current) {
-        Editor.current.children = value;
+export const setEditorValue = (value: any, e: any) => {
+    if (e && e.current) {
+        e.current.children = value;
     }
 };
 
