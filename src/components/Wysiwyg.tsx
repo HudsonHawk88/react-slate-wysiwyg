@@ -2168,21 +2168,21 @@ export const Wysiwyg = ({
     };
 
     useEffect(() => {
-        if (setValue) {
-            setValue(editor.children);
+        if (onChange) {
+            onChange(editor.children);
         }
-    }, []);
+    }, [editor.children]);
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
             <Slate
                 editor={editor}
                 value={value}
-                onChange={(v: CustomElement[]) => {
+                /*  onChange={(v: CustomElement[]) => {
                     if (onChange) {
                         onChange(editor);
                     }
-                }}
+                }} */
             >
                 <Toolbar className="wysiwyg-editor-toolbar">
                     <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
