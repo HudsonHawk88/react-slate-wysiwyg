@@ -2185,11 +2185,13 @@ export const Wysiwyg = ({
 
     useEffect(() => {
         // @ts-ignore
-        console.log('EDITOR CHILDREN, VALUE: ', editor.children, value, edittor.current);
-        edittor.current = editor.children;
-        // @ts-ignore
-        /* editor.children = editor.current; */
-    }, [editor.children]);
+        if (edittor && editor.current) {
+            console.log('EDITOR CHILDREN, VALUE: ', editor.children, value, edittor.current);
+            editor.children = edittor.current;
+            // @ts-ignore
+            /* editor.children = editor.current; */
+        }
+    }, [edittor.current]);
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
