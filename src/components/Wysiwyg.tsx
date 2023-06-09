@@ -3,7 +3,7 @@ import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
 import { Transforms, Editor, Element as SlateElement, Text, Range, Point, BaseText, BaseElement, Ancestor, NodeInterface, createEditor } from 'slate';
-import { Editable, withReact, ReactEditor, Slate } from 'slate-react';
+import { Editable, withReact, ReactEditor } from 'slate-react';
 import { withHistory } from 'slate-history';
 import isUrl from 'is-url';
 /* import imageExtensions from 'image-extensions'; */
@@ -64,13 +64,16 @@ export interface CustomText extends BaseText {
 
 type onUploadType = (file: File) => void;
 
+export declare const Slate: (props: { children: React.ReactNode; editor: ReactEditor; value: CustomElement[]; selection: any; onChange?: ((editor: ReactEditor) => void) | undefined }) => JSX.Element;
+
 interface WysiwygProps {
     className?: string;
     key?: string;
     id?: string | undefined;
+    value: CustomElement[];
     initialValue: CustomElement[];
     defaultValue?: CustomElement[];
-    onChange: VoidFunction;
+    onChange: (editor: ReactEditor) => void;
     customButtons?: Array<[]>;
     colors?: Object;
     reserved?: Boolean;
@@ -623,7 +626,7 @@ export const deserialize = (el: any, markAttributes: CustomText | object = {}): 
 export const Wysiwyg = ({
     className = 'react-slate-wysiwyg',
     id,
-    defaultValue = initialValue,
+    value = initialValue,
     colors = defaultColors,
     reserved = false,
     placeholder = 'Ide írjon szöveget...',
@@ -632,6 +635,9 @@ export const Wysiwyg = ({
     onChange,
     onUpload
 }: WysiwygProps) => {
+    const [children, setChildren] = useState([]);
+    const [selection, setSelection] = useState(null);
+
     const CustomButton = (props: any) => {
         const { format, children, colors } = props;
         return (
@@ -2166,7 +2172,15 @@ export const Wysiwyg = ({
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
-            <Slate initialValue={defaultValue} editor={editor} onChange={onChange}>
+            <Slate
+                editor={editor}
+                selection={selection}
+                value={children}
+                onChange={(editor: any) => {
+                    setChildren(editor.children);
+                    setSelection(editor.selection);
+                }}
+            >
                 <Toolbar className="wysiwyg-editor-toolbar">
                     <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
                     <MarkButton format="italic" icon="fa fa-italic" colors={colors} />
