@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo, createContext, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useMemo, createContext, useRef } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -644,7 +644,6 @@ export const Wysiwyg = ({
     customButtons = [],
     onChange
 }: WysiwygProps) => {
-    edittor = useRef(initialValue);
     const CustomButton = (props: any) => {
         const { format, children, colors } = props;
         return (
@@ -1185,6 +1184,7 @@ export const Wysiwyg = ({
     };
 
     const editor: any = useMemo(() => withImages(withTables(withInlines(withHistory(withReact(createEditor()))))), []);
+    edittor = useRef(editor);
 
     /* const refreshValue = (value: CustomElement[]) => {
         if (value) {
@@ -2183,15 +2183,14 @@ export const Wysiwyg = ({
         );
     };
 
-    useEffect(() => {
+    /*     useEffect(() => {
         // @ts-ignore
         if (edittor && editor.current) {
             console.log('EDITOR CHILDREN, VALUE: ', editor.children, value, edittor.current);
             editor.children = edittor.current;
             // @ts-ignore
-            /* editor.children = editor.current; */
         }
-    }, [edittor.current]);
+    }, [edittor.current]); */
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
