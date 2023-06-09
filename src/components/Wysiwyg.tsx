@@ -31,6 +31,7 @@ export interface CustomNode extends NodeInterface {
     TEXT_NODE: any;
     ELEMENT_NODE: any;
 }
+
 export declare type Node = ReactEditor | Element | Text;
 export type CustomImage = { type: string; url: string; children?: EmptyText[] };
 export type LinkElement = { type: string; url: string; style?: object; linkText?: string; children: CustomText[] | CustomElement[] | any };
@@ -125,6 +126,10 @@ export const initialValue: CustomElement[] = [
         children: [{ text: '', style: { fontSize: '17px' } }]
     }
 ];
+
+export const setEditorValue = (value: any, editor: ReactEditor) => {
+    value = editor.children;
+};
 
 let n = 0;
 
@@ -2168,21 +2173,19 @@ export const Wysiwyg = ({
     };
 
     useEffect(() => {
-        if (onChange && editor) {
-            onChange(editor.children);
-        }
-    }, [editor]);
+        setEditorValue(value, editor);
+    }, []);
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
             <Slate
                 editor={editor}
                 value={value}
-                /* onChange={(v: CustomElement[]) => {
+                onChange={(v: CustomElement[]) => {
                     if (onChange) {
                         onChange(v);
                     }
-                }} */
+                }}
             >
                 <Toolbar className="wysiwyg-editor-toolbar">
                     <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
