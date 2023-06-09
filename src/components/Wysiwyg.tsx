@@ -3,7 +3,7 @@ import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
 import { Transforms, Editor, Element as SlateElement, Text, Range, Point, BaseText, BaseElement, Ancestor, NodeInterface, createEditor } from 'slate';
-import { Editable, withReact, ReactEditor } from 'slate-react';
+import { Editable, withReact, ReactEditor, Slate } from 'slate-react';
 import { withHistory } from 'slate-history';
 import isUrl from 'is-url';
 /* import imageExtensions from 'image-extensions'; */
@@ -65,7 +65,7 @@ export interface CustomText extends BaseText {
 
 type onUploadType = (file: File) => void;
 
-export declare const Slate: (props: { children: React.ReactNode; editor: ReactEditor; value: CustomElement[]; onChange?: ((v: CustomElement[]) => void) | undefined }) => JSX.Element;
+/* export declare const Slate: (props: { children: React.ReactNode; editor: ReactEditor; value: CustomElement[]; onChange?: ((v: CustomElement[]) => void) | undefined }) => JSX.Element; */
 
 interface WysiwygProps {
     className?: string;
@@ -73,7 +73,6 @@ interface WysiwygProps {
     id?: string | undefined;
     value: CustomElement[];
     onChange?: (v: CustomElement[]) => void;
-    setValue?: (v: CustomElement[]) => void;
     customButtons?: Array<[]>;
     colors?: Object;
     reserved?: Boolean;
@@ -637,7 +636,6 @@ export const Wysiwyg = ({
     uploadType = 'link',
     customButtons = [],
     onChange,
-    setValue,
     onUpload
 }: WysiwygProps) => {
     const CustomButton = (props: any) => {
@@ -2173,15 +2171,17 @@ export const Wysiwyg = ({
     };
 
     useEffect(() => {
-        setEditorValue(value, editor);
-    }, []);
+        if (editor) {
+            setEditorValue(value, editor);
+        }
+    }, [editor]);
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
             <Slate
                 editor={editor}
-                value={value}
-                onChange={(v: CustomElement[]) => {
+                initialValue={value}
+                onChange={(v: any) => {
                     if (onChange) {
                         onChange(v);
                     }
