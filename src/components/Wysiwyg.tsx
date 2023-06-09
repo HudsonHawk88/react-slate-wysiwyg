@@ -2168,19 +2168,19 @@ export const Wysiwyg = ({
     };
 
     useEffect(() => {
-        if (onChange) {
+        if (onChange && editor) {
             onChange(editor.children);
         }
-    }, [editor.children]);
+    }, [editor]);
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
             <Slate
                 editor={editor}
                 value={value}
-                /*  onChange={(v: CustomElement[]) => {
+                /* onChange={(v: CustomElement[]) => {
                     if (onChange) {
-                        onChange(editor);
+                        onChange(v);
                     }
                 }} */
             >
