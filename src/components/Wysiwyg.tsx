@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo, createContext, useEffect, forwardRef } from 'react';
+import React, { useCallback, useState, useMemo, createContext, useEffect, useRef } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
@@ -232,6 +232,8 @@ const defaultColors = {
 };
 
 const defaultStyle = { border: '1px black solid', padding: '10px' };
+
+export let edittor = useRef();
 
 const defaultImage: Image = {
     src: '',
@@ -631,18 +633,17 @@ export const deserialize = (el: any, markAttributes: CustomText | object = {}): 
     }
 };
 
-export const Wysiwyg = forwardRef((props: WysiwygProps, ref) => {
-    const {
-        className = 'react-slate-wysiwyg',
-        id,
-        value = initialValue,
-        colors = defaultColors,
-        reserved = false,
-        placeholder = 'Ide írjon szöveget...',
-        uploadType = 'link',
-        customButtons = [],
-        onChange
-    } = props;
+export const Wysiwyg = ({
+    className = 'react-slate-wysiwyg',
+    id,
+    value = initialValue,
+    colors = defaultColors,
+    reserved = false,
+    placeholder = 'Ide írjon szöveget...',
+    uploadType = 'link',
+    customButtons = [],
+    onChange
+}: WysiwygProps) => {
     const CustomButton = (props: any) => {
         const { format, children, colors } = props;
         return (
@@ -2182,14 +2183,14 @@ export const Wysiwyg = forwardRef((props: WysiwygProps, ref) => {
     };
 
     useEffect(() => {
-        if (editor && editor.children && onChange) {
+        if (editor && editor.children && onChange && edittor && edittor.current) {
             // @ts-ignore
-            console.log('EDITOR CHILDREN, VALUE: ', editor.children, value, ref.current);
+            console.log('EDITOR CHILDREN, VALUE: ', editor.children, value, edittor.current);
             // @ts-ignore
-            editor.children = ref.current;
+            /* editor.children = editor.current; */
         }
         // @ts-ignore
-    }, [value, ref.current]);
+    }, [value, edittor.current]);
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
@@ -2197,7 +2198,7 @@ export const Wysiwyg = forwardRef((props: WysiwygProps, ref) => {
                 editor={editor}
                 initialValue={value}
                 // @ts-ignore
-                ref={ref}
+                ref={edittor}
                 onChange={(v: any) => {
                     if (onChange) {
                         onChange(v);
@@ -2269,7 +2270,7 @@ export const Wysiwyg = forwardRef((props: WysiwygProps, ref) => {
             </div>
         </div>
     );
-});
+};
 
 /* export const Wysiwyg = ({
     className = 'react-slate-wysiwyg',
