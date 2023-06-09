@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useMemo, useRef } from 'react';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
-import { Transforms, Editor, Element as SlateElement, Range, Point, createEditor } from 'slate';
+import { Transforms, Editor as SlateEditor, Element as SlateElement, Range, Point, createEditor } from 'slate';
 import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
 import { withHistory } from 'slate-history';
 import isUrl from 'is-url';
@@ -10,11 +10,11 @@ import { Toolbar, ToolbarButton, Icon } from './components';
 import { WysiwygProps, CustomText, Image, LinkElement, YoutubeElement, FormatButtonProps, AccessNode } from './InterfacesAndTypes';
 import { initialValue, defaultColors, defaultImage, defaultStyle } from './InitilValue';
 
-export let edittor: any = [];
+export let Editor: any = [];
 
-export const setEditorValue = (value: any) => {
-    if (edittor && edittor.current) {
-        edittor.children = value;
+export const setEditorValue = (value: any, e: any) => {
+    if (e && e.current) {
+        e.children = value;
     }
 };
 
@@ -64,8 +64,8 @@ export const Wysiwyg = ({
         );
     };
 
-    const isFontSizeActive = (editor: Editor, setFontSize: Function) => {
-        const [match] = Editor.nodes(editor, {
+    const isFontSizeActive = (editor: SlateEditor, setFontSize: Function) => {
+        const [match] = SlateEditor.nodes(editor, {
             match: (n: any) => {
                 if (n['style']) {
                     setFontSize(n['style'].fontSize);
@@ -80,14 +80,14 @@ export const Wysiwyg = ({
         return !!match;
     };
 
-    const addText = (editor: Editor, text: string) => {
+    const addText = (editor: SlateEditor, text: string) => {
         const variable: CustomText = {
             text: text
         };
         Transforms.insertNodes(editor, variable);
     };
 
-    const addImage = (editor: Editor, image: Image) => {
+    const addImage = (editor: SlateEditor, image: Image) => {
         const text = { text: '', style: { display: 'none' } };
         let style = {};
         /* let divStyle = {}; */
@@ -123,7 +123,7 @@ export const Wysiwyg = ({
         }
     };
 
-    const addTablazat = (editor: Editor, tableClass: string, rowNumber: number, colNumber: number, textAlign: string) => {
+    const addTablazat = (editor: SlateEditor, tableClass: string, rowNumber: number, colNumber: number, textAlign: string) => {
         let tableStyle = {};
         const align = format.substring(format.lastIndexOf('-') + 1, format.length);
         if (align === 'center') {
@@ -190,24 +190,24 @@ export const Wysiwyg = ({
         return editor;
     };
 
-    const insertLink = (editor: Editor, url: string, text: string, color: string) => {
+    const insertLink = (editor: SlateEditor, url: string, text: string, color: string) => {
         if (editor.selection) {
             wrapLink(editor, url, text, color);
             toggleLinkModal();
         }
     };
 
-    const insertButton = (editor: Editor, CTALeiras: string, CTAFunc: string, CTAColor: string, CTABgColor: string) => {
+    const insertButton = (editor: SlateEditor, CTALeiras: string, CTAFunc: string, CTAColor: string, CTABgColor: string) => {
         if (editor.selection) {
             wrapButton(editor, CTALeiras, CTAFunc, CTAColor, CTABgColor);
             toggleCTAModal();
         }
     };
 
-    const insertYoutube = (editor: Editor, youtubeUrl: string, youtubeWidth: string | number, youtubeHeight: string | number) => {
+    const insertYoutube = (editor: SlateEditor, youtubeUrl: string, youtubeWidth: string | number, youtubeHeight: string | number) => {
         const { selection } = editor;
         if (selection) {
-            const [parent]: any = Editor.parent(editor, selection.focus?.path);
+            const [parent]: any = SlateEditor.parent(editor, selection.focus?.path);
             const videoId = youtubeUrl.substring(youtubeUrl.indexOf('=', 1) + 1, youtubeUrl.indexOf('&', 1) === -1 ? youtubeUrl.length : youtubeUrl.indexOf('&', 1));
             let url = `https://www.youtube.com/embed/${videoId}`;
             let newStyle = {};
@@ -228,14 +228,14 @@ export const Wysiwyg = ({
         }
     };
 
-    const isLinkActive = (editor: Editor) => {
+    const isLinkActive = (editor: SlateEditor) => {
         const { selection } = editor;
         if (!selection) return false;
         const [match] = Array.from(
-            Editor.nodes(editor, {
-                at: Editor.unhangRange(editor, selection),
+            SlateEditor.nodes(editor, {
+                at: SlateEditor.unhangRange(editor, selection),
                 match: (n: any) => {
-                    return !Editor.isEditor(n) && n.type === 'link';
+                    return !SlateEditor.isEditor(n) && n.type === 'link';
                 }
             })
         );
@@ -243,26 +243,26 @@ export const Wysiwyg = ({
         return !!match;
     };
 
-    const isButtonActive = (editor: Editor) => {
-        const [button] = Editor.nodes(editor, {
-            match: (n: any) => !Editor.isEditor(n) && n.type === 'button'
+    const isButtonActive = (editor: SlateEditor) => {
+        const [button] = SlateEditor.nodes(editor, {
+            match: (n: any) => !SlateEditor.isEditor(n) && n.type === 'button'
         });
         return !!button;
     };
 
-    const unwrapLink = (editor: Editor) => {
+    const unwrapLink = (editor: SlateEditor) => {
         Transforms.unwrapNodes(editor, {
-            match: (n: any) => !Editor.isEditor(n) && n.type === 'link'
+            match: (n: any) => !SlateEditor.isEditor(n) && n.type === 'link'
         });
     };
 
-    const unwrapButton = (editor: Editor) => {
+    const unwrapButton = (editor: SlateEditor) => {
         Transforms.unwrapNodes(editor, {
-            match: (n: any) => !Editor.isEditor(n) && n.type === 'button'
+            match: (n: any) => !SlateEditor.isEditor(n) && n.type === 'button'
         });
     };
 
-    const wrapLink = (editor: Editor, url: string, linkText?: string, linkColor?: string) => {
+    const wrapLink = (editor: SlateEditor, url: string, linkText?: string, linkColor?: string) => {
         if (isLinkActive(editor)) {
             unwrapLink(editor);
         }
@@ -288,7 +288,7 @@ export const Wysiwyg = ({
         }
     };
 
-    const wrapButton = (editor: Editor, CTALeiras: string, CTAFunc: string, CTAColor: string, CTABgColor: string) => {
+    const wrapButton = (editor: SlateEditor, CTALeiras: string, CTAFunc: string, CTAColor: string, CTABgColor: string) => {
         if (isButtonActive(editor)) {
             unwrapButton(editor);
         }
@@ -446,15 +446,15 @@ export const Wysiwyg = ({
         );
     };
 
-    const addYoutube = (editor: Editor, youtubeUrl: string, youtubeWidth: string | number, youtubeHeight: string | number) => {
+    const addYoutube = (editor: SlateEditor, youtubeUrl: string, youtubeWidth: string | number, youtubeHeight: string | number) => {
         insertYoutube(editor, youtubeUrl, youtubeWidth, youtubeHeight);
     };
 
-    const addCTA = (editor: Editor, CTALeiras: string, CTAFunc: string, CTAColor: string, CTABgColor: string) => {
+    const addCTA = (editor: SlateEditor, CTALeiras: string, CTAFunc: string, CTAColor: string, CTABgColor: string) => {
         insertButton(editor, CTALeiras, CTAFunc, CTAColor, CTABgColor);
     };
 
-    const addEmoji = (editor: Editor) => {
+    const addEmoji = (editor: SlateEditor) => {
         console.log('editor: ', editor);
     };
 
@@ -465,20 +465,20 @@ export const Wysiwyg = ({
         return imageExtensions.includes(ext);
     }; */
 
-    const withTables = (editor: Editor) => {
+    const withTables = (editor: SlateEditor) => {
         const { deleteBackward, deleteForward, insertBreak } = editor;
 
         editor.deleteBackward = (unit) => {
             const { selection } = editor;
 
             if (selection && Range.isCollapsed(selection)) {
-                const [cell] = Editor.nodes(editor, {
-                    match: (n: any) => !Editor.isEditor(n) && n.type === 'table-cell'
+                const [cell] = SlateEditor.nodes(editor, {
+                    match: (n: any) => !SlateEditor.isEditor(n) && n.type === 'table-cell'
                 });
 
                 if (cell) {
                     const [, cellPath] = cell;
-                    const start = Editor.start(editor, cellPath);
+                    const start = SlateEditor.start(editor, cellPath);
 
                     if (Point.equals(selection.anchor, start)) {
                         return;
@@ -493,13 +493,13 @@ export const Wysiwyg = ({
             const { selection } = editor;
 
             if (selection && Range.isCollapsed(selection)) {
-                const [cell] = Editor.nodes(editor, {
-                    match: (n: any) => !Editor.isEditor(n) && n.type === 'table-cell'
+                const [cell] = SlateEditor.nodes(editor, {
+                    match: (n: any) => !SlateEditor.isEditor(n) && n.type === 'table-cell'
                 });
 
                 if (cell) {
                     const [, cellPath] = cell;
-                    const end = Editor.end(editor, cellPath);
+                    const end = SlateEditor.end(editor, cellPath);
 
                     if (Point.equals(selection.anchor, end)) {
                         return;
@@ -514,8 +514,8 @@ export const Wysiwyg = ({
             const { selection } = editor;
 
             if (selection) {
-                const [table] = Editor.nodes(editor, {
-                    match: (n: any) => !Editor.isEditor(n) && n.type === 'table'
+                const [table] = SlateEditor.nodes(editor, {
+                    match: (n: any) => !SlateEditor.isEditor(n) && n.type === 'table'
                 });
 
                 if (table) {
@@ -529,7 +529,7 @@ export const Wysiwyg = ({
         return editor;
     };
 
-    const withImages = (editor: Editor) => {
+    const withImages = (editor: SlateEditor) => {
         const { isVoid } = editor;
 
         editor.isVoid = (element: any) => {
@@ -557,7 +557,7 @@ export const Wysiwyg = ({
     };
 
     const editor: any = useMemo(() => withImages(withTables(withInlines(withHistory(withReact(createEditor()))))), []);
-    edittor = useRef(editor);
+    Editor = useRef(editor);
     const [fontSize, setFontSize] = useState('17px');
     const [imageModal, setImageModal] = useState(false);
     const [tableModal, setTableModal] = useState(false);
@@ -1289,29 +1289,29 @@ export const Wysiwyg = ({
         );
     };
 
-    const setFont = (e: any, editor: Editor) => {
+    const setFont = (e: any, editor: SlateEditor) => {
         const value = e.target.value;
         setFontSize(value);
         toggleFontsize(editor, value);
     };
 
     function isMarkActive(editor: any, format: any) {
-        const [match] = Editor.nodes(editor, {
+        const [match] = SlateEditor.nodes(editor, {
             match: (n: any) => n[format] === true,
             universal: true
         });
         return !!match;
     }
 
-    const isBlockActive = (editor: Editor, format: string, blockType: any = 'type') => {
+    const isBlockActive = (editor: SlateEditor, format: string, blockType: any = 'type') => {
         const obj: AccessNode = { keyName: blockType };
         const { selection } = editor;
         if (!selection) return false;
         const [match] = Array.from(
-            Editor.nodes(editor, {
-                at: Editor.unhangRange(editor, selection),
+            SlateEditor.nodes(editor, {
+                at: SlateEditor.unhangRange(editor, selection),
                 match: (n: any) => {
-                    return !Editor.isEditor(n) && n[obj.keyName] === format;
+                    return !SlateEditor.isEditor(n) && n[obj.keyName] === format;
                 }
             })
         );
@@ -1323,19 +1323,19 @@ export const Wysiwyg = ({
         const isActive = isMarkActive(editor, format);
 
         if (isActive) {
-            Editor.removeMark(editor, format);
+            SlateEditor.removeMark(editor, format);
         } else {
-            Editor.addMark(editor, format, true);
+            SlateEditor.addMark(editor, format, true);
         }
     };
 
-    function toggleBlock(editor: Editor, format: any) {
+    function toggleBlock(editor: SlateEditor, format: any) {
         const isActive = isBlockActive(editor, format);
         const isList = LIST_TYPES.includes(format);
 
         Transforms.unwrapNodes(editor, {
             match: (n: any) => {
-                return !Editor.isEditor(n) && LIST_TYPES.includes(n.type) && !TEXT_ALIGN_TYPES.includes(format);
+                return !SlateEditor.isEditor(n) && LIST_TYPES.includes(n.type) && !TEXT_ALIGN_TYPES.includes(format);
             },
             split: true
         });
@@ -1345,7 +1345,7 @@ export const Wysiwyg = ({
         if (TEXT_ALIGN_TYPES.includes(format)) {
             const { selection } = editor;
             if (selection) {
-                const [parent]: any = Editor.parent(editor, selection.focus?.path);
+                const [parent]: any = SlateEditor.parent(editor, selection.focus?.path);
                 let style = Object.assign({}, parent.style);
                 let f = format.substring(format.lastIndexOf('-') + 1, format.length);
                 const newStyle = Object.assign(style, { textAlign: f });
@@ -1371,17 +1371,17 @@ export const Wysiwyg = ({
         }
     }
 
-    const toggleFontsize = (editor: Editor, value: string) => {
+    const toggleFontsize = (editor: SlateEditor, value: string) => {
         const { selection } = editor;
         if (selection) {
-            const [parent]: any = Editor.parent(editor, selection.focus?.path);
+            const [parent]: any = SlateEditor.parent(editor, selection.focus?.path);
             let style = Object.assign({}, parent.style);
             let newStyle = Object.assign(style, { fontSize: value });
             const newParameters: any = {
                 style: newStyle
             };
             Transforms.setNodes(editor, newParameters);
-            Editor.addMark(editor, 'style', newParameters.style);
+            SlateEditor.addMark(editor, 'style', newParameters.style);
         }
     };
 
