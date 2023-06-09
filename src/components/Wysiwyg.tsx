@@ -1,9 +1,9 @@
-import React, { useCallback, useState, useMemo, createContext, useEffect } from 'react';
+import React, { useCallback, useState, useMemo, createContext, useEffect, forwardRef } from 'react';
 import escapeHtml from 'escape-html';
 import { jsx } from 'slate-hyperscript';
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Label } from 'reactstrap';
 import { Transforms, Editor, Element as SlateElement, Text, Range, Point, BaseText, BaseElement, Ancestor, NodeInterface, createEditor } from 'slate';
-import { Editable, withReact, ReactEditor, Slate } from 'slate-react';
+import { Editable, withReact, ReactEditor } from 'slate-react';
 import { withHistory } from 'slate-history';
 import isUrl from 'is-url';
 /* import imageExtensions from 'image-extensions'; */
@@ -65,7 +65,7 @@ export interface CustomText extends BaseText {
 
 type onUploadType = (file: File) => void;
 
-/* export declare const Slate: (props: { children: React.ReactNode; editor: ReactEditor; value: CustomElement[]; onChange?: ((v: CustomElement[]) => void) | undefined }) => JSX.Element; */
+export declare const Slate: (props: { children: React.ReactNode; ref: any; editor: ReactEditor; value: CustomElement[]; onChange?: ((v: CustomElement[]) => void) | undefined }) => JSX.Element;
 
 interface WysiwygProps {
     className?: string;
@@ -626,18 +626,18 @@ export const deserialize = (el: any, markAttributes: CustomText | object = {}): 
     }
 };
 
-export const Wysiwyg = ({
-    className = 'react-slate-wysiwyg',
-    id,
-    value = initialValue,
-    colors = defaultColors,
-    reserved = false,
-    placeholder = 'Ide írjon szöveget...',
-    uploadType = 'link',
-    customButtons = [],
-    onChange,
-    onUpload
-}: WysiwygProps) => {
+export const Wysiwyg = forwardRef((props: WysiwygProps, ref) => {
+    const {
+        className = 'react-slate-wysiwyg',
+        id,
+        value = initialValue,
+        colors = defaultColors,
+        reserved = false,
+        placeholder = 'Ide írjon szöveget...',
+        uploadType = 'link',
+        customButtons = [],
+        onChange
+    } = props;
     const CustomButton = (props: any) => {
         const { format, children, colors } = props;
         return (
@@ -1178,6 +1178,12 @@ export const Wysiwyg = ({
     };
 
     const editor: any = useMemo(() => withImages(withTables(withInlines(withHistory(withReact(createEditor()))))), []);
+
+    /* const refreshValue = (value: CustomElement[]) => {
+        if (value) {
+            editor.children = value;
+        }
+    } */
 
     /*     const [editor] = useState(() => withReact(createEditor())); */
     const [fontSize, setFontSize] = useState('17px');
@@ -2181,7 +2187,8 @@ export const Wysiwyg = ({
         <div style={{ display: 'inline-grid', width: '100%' }}>
             <Slate
                 editor={editor}
-                initialValue={value}
+                value={value}
+                ref={ref}
                 onChange={(v: any) => {
                     if (onChange) {
                         onChange(v);
@@ -2253,4 +2260,22 @@ export const Wysiwyg = ({
             </div>
         </div>
     );
+});
+
+/* export const Wysiwyg = ({
+    className = 'react-slate-wysiwyg',
+    id,
+    value = initialValue,
+    colors = defaultColors,
+    reserved = false,
+    placeholder = 'Ide írjon szöveget...',
+    uploadType = 'link',
+    customButtons = [],
+    onChange,
+    onUpload,
+
+}: WysiwygProps) => {
+    
 };
+
+export {  } */
