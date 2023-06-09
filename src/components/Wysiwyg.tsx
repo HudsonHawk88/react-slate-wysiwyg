@@ -2171,10 +2171,11 @@ export const Wysiwyg = ({
     };
 
     useEffect(() => {
-        if (onChange) {
+        if (editor && editor.children && onChange) {
+            console.log('EDITOR CHILDREN, VALUE: ', editor.children, value);
             onChange(value);
         }
-    }, [editor]);
+    }, [editor.children]);
 
     return (
         <div style={{ display: 'inline-grid', width: '100%' }}>
