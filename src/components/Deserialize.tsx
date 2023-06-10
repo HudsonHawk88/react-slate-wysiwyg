@@ -17,11 +17,11 @@ export const deserialize = (el: any, markAttributes: CustomText | object = {}): 
         case 'STRONG':
             nodeAttributes.bold = true;
             break;
-        case 'ITALIC': {
+        case 'EM': {
             nodeAttributes.italic = true;
             break;
         }
-        case 'UNDERLINED': {
+        case 'U': {
             nodeAttributes.underline = true;
             break;
         }

@@ -1,6 +1,6 @@
 {
   "name": "@inftechsol/react-slate-wysiwyg",
-  "version": "1.7.4",
+  "version": "1.7.5",
   "description": "This is a wysiwyg editor with Slate js in React",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -16,9 +16,6 @@
     "watch": "rollup -c -w",
     "pub": "npm publish --access public",
     "test": "react-scripts test",
-
-
-
     "eject": "react-scripts eject"
   },
   "repository": {
