@@ -16,14 +16,18 @@ export const deserialize = (el: any, markAttributes: CustomText | object = {}): 
     switch (el.nodeName) {
         case 'STRONG':
             nodeAttributes.bold = true;
+            break;
         case 'ITALIC': {
             nodeAttributes.italic = true;
+            break;
         }
         case 'UNDERLINED': {
             nodeAttributes.underline = true;
+            break;
         }
         case 'CODE': {
             nodeAttributes.code = true;
+            break;
         }
     }
 
