@@ -47,11 +47,13 @@ export type ButtonElement = {
 export interface CustomTooolbarButton extends HTMLProps<HTMLButtonElement> {
   format: string;
   icon?: string;
+  text?: string;
   colors?: object;
 }
 
 export interface CustomText extends BaseText {
   type?: string;
+  emoji?: any;
   bold?: boolean | undefined;
   italic?: boolean | undefined;
   underline?: boolean | undefined;

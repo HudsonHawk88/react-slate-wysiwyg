@@ -48,7 +48,11 @@ export const serialize = (nodes: CustomElement[] | Node[]) => {
     const children =
       node.children &&
       node.children.map((nn: any): any => {
-        if (Text.isText(nn) || nn.style) {
+        if (
+          Text.isText(nn) ||
+          (nn.style && nn.type !== "button") ||
+          (nn.style && nn.emoji)
+        ) {
           let string = escapeHtml(nn.text);
           if (nn.bold) {
             string = `<strong>${string}</strong>`;

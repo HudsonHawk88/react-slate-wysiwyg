@@ -38,6 +38,7 @@ import {
   defaultImage,
   defaultStyle,
 } from "./InitilValue";
+import { EmojiList } from "./Emojis";
 import { getStyleFromHtmlStyle } from "./HelperFucntions";
 
 export let Editor: any = [];
@@ -259,7 +260,7 @@ export const ImageButton = (props: any) => {
 };
 
 export const CustomButton = (props: any) => {
-  const { format, children, key, className } = props;
+  const { format, key, className, text } = props;
   return (
     <SharedAppConsumer>
       {(propps: any) => {
@@ -275,7 +276,7 @@ export const CustomButton = (props: any) => {
             }}
             colors={colors}
           >
-            {children}
+            {text}
           </ToolbarButton>
         );
       }}
@@ -367,6 +368,25 @@ export const YoutubeButton = (props: FormatButtonProps) => {
           <ToolbarButton
             className={`youtube_button ${className || ""}`}
             onClick={() => toggleYoutubeModal()}
+          >
+            <Icon buttonIcons={[icon]} className={icon} />
+          </ToolbarButton>
+        );
+      }}
+    </SharedAppConsumer>
+  );
+};
+
+export const EmojiButton = (props: FormatButtonProps) => {
+  const { icon, className } = props;
+  return (
+    <SharedAppConsumer>
+      {(propps: any) => {
+        const { toggleEmojiModal } = propps;
+        return (
+          <ToolbarButton
+            className={`emoji_button ${className}`}
+            onClick={() => toggleEmojiModal()}
           >
             <Icon buttonIcons={[icon]} className={icon} />
           </ToolbarButton>
@@ -982,8 +1002,8 @@ export const Wysiwyg = ({
     insertButton(editor, CTALeiras, CTAFunc, CTAColor, CTABgColor);
   };
 
-  const addEmoji = (editor: SlateEditor) => {
-    console.log("editor: ", editor);
+  const addEmoji = (editor: SlateEditor, emoji: string) => {
+    editor.insertText(emoji);
   };
 
   /* const isImageUrl = (url: string) => {
@@ -1202,6 +1222,15 @@ export const Wysiwyg = ({
       children = <u>{children}</u>;
     }
 
+    if (leaf.emoji) {
+      const newStyle = getStyleFromHtmlStyle(style, true);
+      children = (
+        <span style={newStyle} {...attributes} {...props}>
+          {leaf.emoji}
+        </span>
+      );
+    }
+
     if (leaf.style) {
       const newStyle = getStyleFromHtmlStyle(style, true);
       children = (
@@ -1211,7 +1240,7 @@ export const Wysiwyg = ({
       );
     }
 
-    return leaf.style ? (
+    return leaf.style || leaf.emoji ? (
       <React.Fragment>{children}</React.Fragment>
     ) : (
       <span
@@ -2047,10 +2076,26 @@ export const Wysiwyg = ({
         size="md"
       >
         <ModalHeader>Emoji hozzáadása</ModalHeader>
-        <ModalBody></ModalBody>
+        <ModalBody>
+          {EmojiList.map((emoji) => {
+            return (
+              <button
+                key={emoji.name}
+                style={{ fontSize: "25px" }}
+                onClick={() => {
+                  addEmoji(editor, emoji.id);
+                  setTimeout(() => {
+                    toggleEmojiModal();
+                  }, 200);
+                }}
+              >
+                <span>{emoji.id}</span>
+              </button>
+            );
+          })}
+        </ModalBody>
         <ModalFooter>
-          <Button onClick={() => addEmoji(editor)}>Mentés</Button>
-          <Button onClick={toggleEmojiModal}>Mégsem</Button>
+          <Button onClick={toggleEmojiModal}>OK</Button>
         </ModalFooter>
       </Modal>
     );
@@ -2087,15 +2132,6 @@ export const Wysiwyg = ({
       editor.addMark("style", newStyle);
     }
   };
-
-  /* const EmojiButton = (props: FormatButtonProps) => {
-        const { icon } = props;
-        return (
-            <ToolbarButton className="emoji_button" onClick={() => toggleEmojiModal()}>
-                <Icon buttonIcons={[icon]} className={icon} />
-            </ToolbarButton>
-        );
-    }; */
 
   return (
     <React.Fragment>

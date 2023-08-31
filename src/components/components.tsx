@@ -14,6 +14,7 @@ import {
   TableButton,
   ToggleEditableButtonButton,
   YoutubeButton,
+  EmojiButton,
 } from "./Wysiwyg";
 import { defaultColors } from "./InitilValue";
 import { CustomTooolbarButton } from "./InterfacesAndTypes";
@@ -233,6 +234,7 @@ export const ToolbarItem = React.forwardRef(
       type = "",
       format = "",
       icon = "",
+      text = "",
       colors = defaultColors,
       ...rest
     }: CustomTooolbarButton,
@@ -423,6 +425,24 @@ export const ToolbarItem = React.forwardRef(
       );
     }
 
+    if (type === "emoji") {
+      element = (
+        <SharedAppConsumer>
+          {(props) => {
+            return (
+              <EmojiButton
+                ref={ref}
+                format={format}
+                icon={icon}
+                {...props}
+                {...rest}
+              />
+            );
+          }}
+        </SharedAppConsumer>
+      );
+    }
+
     if (type === "custom") {
       element = (
         <SharedAppConsumer>
@@ -430,6 +450,7 @@ export const ToolbarItem = React.forwardRef(
             return (
               <CustomButton
                 ref={ref}
+                text={text}
                 format={format}
                 icon={icon}
                 colors={colors}
