@@ -917,7 +917,7 @@ export const Wysiwyg = ({
       </a>
     );
   };
-
+    
   const EditableButtonComponent = (props: any) => {
     const { attributes, element } = props;
     const { CTALeiras, CTAFunc, CTAColor, CTABgColor } = element;

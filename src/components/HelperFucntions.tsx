@@ -19,10 +19,10 @@ const getHtmlStyleKey = (styleKey: string) => {
       key.toLowerCase().substring(upperPosition, key.length)
     : key;
 
+
   if (key === "fontColor") {
     newKey = "color";
   }
-
   return newKey;
 };
 
