@@ -1,4 +1,5 @@
-import { Text, BaseText, BaseElement, NodeInterface } from "slate";
+import { ElementType, HTMLProps } from "react";
+import { Text, BaseText, BaseElement, NodeInterface, Descendant } from "slate";
 import { ReactEditor } from "slate-react";
 
 export interface CustomElement extends BaseElement {
@@ -6,7 +7,7 @@ export interface CustomElement extends BaseElement {
   className?: string;
   align?: string;
   style?: object;
-  children: CustomElement[] | CustomText[];
+  children: CustomElement[] | CustomText[] | Descendant[];
 }
 
 export interface CustomNode extends NodeInterface {
@@ -42,8 +43,17 @@ export type ButtonElement = {
   bgColor?: string;
   children?: LinkElement[];
 };
+
+export interface CustomTooolbarButton extends HTMLProps<HTMLButtonElement> {
+  format: string;
+  icon?: string;
+  text?: string;
+  colors?: object;
+}
+
 export interface CustomText extends BaseText {
   type?: string;
+  emoji?: any;
   bold?: boolean | undefined;
   italic?: boolean | undefined;
   underline?: boolean | undefined;
@@ -56,7 +66,10 @@ export interface CustomText extends BaseText {
 export type onUploadType = (file: File) => void;
 
 export interface WysiwygProps {
+  as: ElementType;
+  children: any;
   className?: string;
+  editorClass?: string;
   key?: string;
   id?: string | undefined;
   value: CustomElement[];
@@ -65,14 +78,16 @@ export interface WysiwygProps {
   colors?: Object;
   reserved?: Boolean;
   placeholder?: string;
-  uploadType?: "pc" | "link";
+  uploadType?: "pc" | "link" | "objectstore";
   onUpload?: onUploadType;
 }
 
 export interface FormatButtonProps {
+  className?: string;
   format: string;
   icon: any;
   colors?: object;
+  plusIcon?: string;
 }
 
 export type Format = string;

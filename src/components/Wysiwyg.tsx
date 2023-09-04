@@ -21,15 +21,16 @@ import { withHistory } from "slate-history";
 import isUrl from "is-url";
 /* import imageExtensions from 'image-extensions'; */
 import { css } from "@emotion/css";
-import { Toolbar, ToolbarButton, Icon } from "./components";
+import { ToolbarButton, Icon } from "./components";
 import {
   WysiwygProps,
-  CustomText,
+  // CustomText,
   Image,
   LinkElement,
   YoutubeElement,
   FormatButtonProps,
   AccessNode,
+  CustomText,
 } from "./InterfacesAndTypes";
 import {
   initialValue,
@@ -37,6 +38,8 @@ import {
   defaultImage,
   defaultStyle,
 } from "./InitilValue";
+import { EmojiList } from "./Emojis";
+import { getStyleFromHtmlStyle } from "./HelperFucntions";
 
 export let Editor: any = [];
 
@@ -55,51 +58,496 @@ const TEXT_ALIGN_TYPES = [
 ];
 /* const HEADING_TYPES = ['heading-one', 'heading-2', 'heading-3', 'heading-4', 'heading-5']; */
 
+const SharedAppContext = React.createContext({});
+
+export const FontColorButton = (props: FormatButtonProps) => {
+  const { format, className } = props;
+
+  return (
+    <SharedAppConsumer>
+      {(propps: any) => {
+        const { editor, isMarkActive, setFontCol, fontColor } = propps;
+        return (
+          <ToolbarButton
+            className={`fontColor_button ${className}`}
+            onMouseDown={() => {}}
+          >
+            <Input
+              type="color"
+              style={{ width: "60px", height: "35px" }}
+              value={fontColor}
+              onChange={(e) => {
+                setFontCol(e, editor);
+              }}
+              className={`fontColor_input`}
+              active={isMarkActive(editor, format)}
+            />
+          </ToolbarButton>
+        );
+      }}
+    </SharedAppConsumer>
+  );
+};
+
+export const BlockButton = (props: FormatButtonProps) => {
+  const { format, icon, className } = props;
+  const headingNumberIndex = format.indexOf("-");
+  const headingNumber =
+    icon === "fa fa-header" && format.slice(headingNumberIndex + 1);
+  return (
+    <SharedAppConsumer>
+      {(propps: any) => {
+        const { editor, isBlockActive, toggleBlock, colors } = propps;
+        return (
+          <ToolbarButton
+            className={`block_button ${className}`}
+            active={isBlockActive(editor, format)}
+            onMouseDown={(event: MouseEvent) => {
+              event.preventDefault();
+              toggleBlock(editor, format);
+            }}
+            colors={colors}
+          >
+            {icon === "fa fa-header" ? (
+              <>
+                <Icon buttonIcons={[icon]} className={icon} />
+                {headingNumber && headingNumber}
+              </>
+            ) : (
+              <Icon buttonIcons={[icon]} className={icon} />
+            )}
+          </ToolbarButton>
+        );
+      }}
+    </SharedAppConsumer>
+  );
+};
+
+export const MarkButton = (props: FormatButtonProps) => {
+  const { format, icon, className } = props;
+
+  return (
+    <SharedAppConsumer>
+      {(propps: any) => {
+        const { editor, isMarkActive, toggleMark, colors } = propps;
+        return (
+          <ToolbarButton
+            className={`mark_button ${className}`}
+            active={isMarkActive(editor, format)}
+            onMouseDown={(event: MouseEvent) => {
+              event.preventDefault();
+              toggleMark(editor, format);
+            }}
+            colors={colors}
+          >
+            <Icon buttonIcons={[icon]} className={icon} />
+          </ToolbarButton>
+        );
+      }}
+    </SharedAppConsumer>
+  );
+};
+
+export const FontsizeButton = (props: any): any => {
+  const {
+    format,
+    editor,
+    setFontSize,
+    isFontSizeActive,
+    fontSize,
+    setFont,
+    className,
+  } = props;
+  return (
+    <ToolbarButton
+      className={`font_button ${className}`}
+      style={{ position: "relative", top: "-3px", left: "15px" }}
+      onMouseUp={() => {}}
+      name={format}
+      active={isFontSizeActive(editor, setFontSize)}
+    >
+      <select
+        name="fontsize"
+        id="fontsize"
+        value={fontSize}
+        onChange={(e) => {
+          setFont(e, editor);
+        }}
+        className="font_button"
+        onMouseUp={() => {}}
+        // name={format}
+      >
+        <option key="17px" value="17px">
+          17 px
+        </option>
+        <option key="18px" value="18px">
+          18 px
+        </option>
+        <option key="19px" value="19px">
+          19 px
+        </option>
+        <option key="20px" value="20px">
+          20 px
+        </option>
+        <option key="21px" value="21px">
+          21 px
+        </option>
+        <option key="22px" value="22px">
+          22 px
+        </option>
+        <option key="23px" value="23px">
+          23 px
+        </option>
+        <option key="24px" value="24px">
+          24 px
+        </option>
+        <option key="25px" value="25px">
+          25 px
+        </option>
+      </select>
+    </ToolbarButton>
+  );
+};
+
+export const TableButton = (props: FormatButtonProps) => {
+  const { icon, format, plusIcon, className } = props;
+  const align = format.substring(format.indexOf("-") + 1, format.length);
+  const plusIc = plusIcon || `fa-solid fa-align-${align}`;
+  return (
+    <SharedAppConsumer>
+      {(propps: any) => {
+        const { toggleTableModal } = propps;
+        return (
+          <ToolbarButton
+            className={`table_button ${className}`}
+            onClick={() => toggleTableModal(format)}
+          >
+            <Icon buttonIcons={[plusIc, icon]} className={icon} />
+          </ToolbarButton>
+        );
+      }}
+    </SharedAppConsumer>
+  );
+};
+
+export const ImageButton = (props: any) => {
+  const { icon, format, plusIcon, className } = props;
+  const align = format.substring(format.indexOf("-") + 1, format.length);
+  const plusIco = plusIcon
+    ? plusIcon
+    : align === "image"
+    ? `fa-solid fa-align-justify`
+    : `fa-solid fa-align-${align}`;
+
+  return (
+    <SharedAppConsumer>
+      {(propps: any) => {
+        const { toggleImageModal } = propps;
+        return (
+          <ToolbarButton
+            className={`image_button ${className || ""}`}
+            onClick={() => toggleImageModal(format)}
+          >
+            <Icon
+              buttonIcons={align === "image" ? [icon] : [plusIco, icon]}
+              className={icon}
+            />
+          </ToolbarButton>
+        );
+      }}
+    </SharedAppConsumer>
+  );
+};
+
+export const CustomButton = (props: any) => {
+  const { format, key, className, text } = props;
+  return (
+    <SharedAppConsumer>
+      {(propps: any) => {
+        const { editor, addText, colors } = propps;
+        return (
+          <ToolbarButton
+            key={key}
+            style={{ width: "fit-content" }}
+            className={`custom_button ${className || ""}`}
+            onMouseDown={(event: MouseEvent) => {
+              event.preventDefault();
+              addText(editor, format);
+            }}
+            colors={colors}
+          >
+            {text}
+          </ToolbarButton>
+        );
+      }}
+    </SharedAppConsumer>
+  );
+};
+
+export const LinkButton = (props: FormatButtonProps) => {
+  const { icon, className } = props;
+  return (
+    <SharedAppConsumer>
+      {(propps: any) => {
+        const { editor, isLinkActive, toggleLinkModal } = propps;
+        return (
+          <ToolbarButton
+            active={isLinkActive(editor)}
+            className={`link_button ${className || ""}`}
+            onClick={() => toggleLinkModal()}
+          >
+            <Icon buttonIcons={[icon]} className={icon} />
+          </ToolbarButton>
+        );
+      }}
+    </SharedAppConsumer>
+  );
+};
+
+export const RemoveLinkButton = (props: FormatButtonProps) => {
+  const { format, icon, className } = props;
+
+  return (
+    <SharedAppConsumer>
+      {(propps: any) => {
+        const { editor, isLinkActive, unwrapLink } = propps;
+        return (
+          <ToolbarButton
+            active={isLinkActive(editor)}
+            className={`removelink_button ${className || ""}`}
+            format={format}
+            onClick={() => {
+              if (isLinkActive(editor)) {
+                unwrapLink(editor);
+              }
+            }}
+          >
+            <Icon buttonIcons={[icon]} className={icon} />
+          </ToolbarButton>
+        );
+      }}
+    </SharedAppConsumer>
+  );
+};
+
+export const ToggleEditableButtonButton = (props: FormatButtonProps) => {
+  const { format, icon, className } = props;
+  return (
+    <SharedAppConsumer>
+      {(propps: any) => {
+        const { editor, isButtonActive, unwrapButton, toggleCTAModal } = propps;
+        return (
+          <ToolbarButton
+            format={format}
+            active={isButtonActive(editor)}
+            className={`cta_button ${className || ""}`}
+            onMouseDown={(event: any) => {
+              event.preventDefault();
+              if (isButtonActive(editor)) {
+                unwrapButton(editor);
+              } else {
+                toggleCTAModal();
+              }
+            }}
+          >
+            <Icon buttonIcons={[icon]} className={icon} />
+          </ToolbarButton>
+        );
+      }}
+    </SharedAppConsumer>
+  );
+};
+
+export const YoutubeButton = (props: FormatButtonProps) => {
+  const { icon, className } = props;
+  return (
+    <SharedAppConsumer>
+      {(propps: any) => {
+        const { toggleYoutubeModal } = propps;
+        return (
+          <ToolbarButton
+            className={`youtube_button ${className || ""}`}
+            onClick={() => toggleYoutubeModal()}
+          >
+            <Icon buttonIcons={[icon]} className={icon} />
+          </ToolbarButton>
+        );
+      }}
+    </SharedAppConsumer>
+  );
+};
+
+export const EmojiButton = (props: FormatButtonProps) => {
+  const { icon, className } = props;
+  return (
+    <SharedAppConsumer>
+      {(propps: any) => {
+        const { toggleEmojiModal } = propps;
+        return (
+          <ToolbarButton
+            className={`emoji_button ${className}`}
+            onClick={() => toggleEmojiModal()}
+          >
+            <Icon buttonIcons={[icon]} className={icon} />
+          </ToolbarButton>
+        );
+      }}
+    </SharedAppConsumer>
+  );
+};
+
 export const Wysiwyg = ({
   className = "react-slate-wysiwyg",
+  editorClass = "react-slate-wysiwyg-editor",
+  children,
   id,
   value = initialValue,
   colors = defaultColors,
-  reserved = false,
   placeholder = "Ide írjon szöveget...",
   uploadType = "link",
   customButtons = [],
   onChange,
+  as: Component = "div",
 }: WysiwygProps) => {
-  const CustomButton = (props: any) => {
-    const { format, children, colors, key } = props;
-    return (
-      <ToolbarButton
-        key={key}
-        style={{ width: "fit-content" }}
-        reserved={reserved}
-        className="custom_button"
-        onMouseDown={(event: MouseEvent) => {
-          event.preventDefault();
-          addText(editor, format);
-        }}
-        colors={colors}
-      >
-        {children}
-      </ToolbarButton>
-    );
+  const toggleImageModal = (format?: any) => {
+    setImageModal(!imageModal);
+    if (format) {
+      setFormat(format);
+    }
   };
 
-  const renderCustomButtons = () => {
-    return (
-      customButtons.length > 0 &&
-      customButtons.map((button: any, index: number) => {
+  function toggleBlock(editor: SlateEditor, format: any) {
+    const isActive = isBlockActive(editor, format);
+    const isList = LIST_TYPES.includes(format);
+
+    Transforms.unwrapNodes(editor, {
+      match: (n: any) => {
         return (
-          <CustomButton
-            colors={button.colors || colors}
-            key={index.toString()}
-            format={button.format}
-          >
-            {button.text}
-          </CustomButton>
+          !SlateEditor.isEditor(n) &&
+          LIST_TYPES.includes(n.type) &&
+          !TEXT_ALIGN_TYPES.includes(format)
         );
+      },
+      split: true,
+    });
+
+    let newProperties: any = {};
+
+    if (TEXT_ALIGN_TYPES.includes(format)) {
+      const { selection } = editor;
+      if (selection) {
+        const [parent]: any = SlateEditor.parent(editor, selection.focus?.path);
+        let style = Object.assign({}, parent.style);
+        let f = format.substring(format.lastIndexOf("-") + 1, format.length);
+        const newStyle = Object.assign(style, { textAlign: f });
+        if (
+          (parent &&
+            parent.type.includes("heading") &&
+            format.includes("align")) ||
+          (parent &&
+            parent.type.includes("align") &&
+            format.includes("heading"))
+        ) {
+          delete newStyle["fontSize"];
+        }
+        newProperties = {
+          align: isActive ? undefined : f,
+          style: newStyle,
+          type: `${
+            parent &&
+            parent.type.includes("heading") &&
+            format.includes("align")
+              ? parent.type
+              : `align-${f}`
+          }`,
+        };
+      }
+    } else {
+      const { selection } = editor;
+
+      if (selection) {
+        const [parent]: any = SlateEditor.parent(editor, selection.focus?.path);
+        newProperties = {
+          type: isActive ? "align-left" : isList ? "list-item" : format,
+          align: isActive ? undefined : format,
+          style:
+            format.includes("heading") &&
+            parent &&
+            parent.type.includes("align")
+              ? {}
+              : { fontSize: "17px" },
+        };
+      }
+    }
+
+    Transforms.setNodes<SlateElement>(editor, newProperties);
+
+    if (!isActive && isList) {
+      const { selection } = editor;
+
+      if (selection) {
+        const [parent]: any = SlateEditor.parent(editor, selection.focus?.path);
+        newProperties = {
+          type: isActive ? "align-left" : isList ? "list-item" : format,
+          align: isActive ? undefined : format,
+          style:
+            format.includes("heading") &&
+            parent &&
+            parent.type.includes("align")
+              ? {}
+              : { fontSize: "17px" },
+        };
+        const block = {
+          type: format,
+          style:
+            format.includes("heading") &&
+            parent &&
+            parent.type.includes("align")
+              ? {}
+              : { fontSize: "17px" },
+          children: [],
+        };
+        Transforms.wrapNodes(editor, block);
+      }
+    }
+  }
+
+  const isBlockActive = (
+    editor: SlateEditor,
+    format: string,
+    blockType: any = "type"
+  ) => {
+    const obj: AccessNode = { keyName: blockType };
+    const { selection } = editor;
+    if (!selection) return false;
+    const [match] = Array.from(
+      SlateEditor.nodes(editor, {
+        at: SlateEditor.unhangRange(editor, selection),
+        match: (n: any) => {
+          return !SlateEditor.isEditor(n) && n[obj.keyName] === format;
+        },
       })
     );
+
+    return !!match;
+  };
+
+  function isMarkActive(editor: any, format: any, color?: string) {
+    const [match] = SlateEditor.nodes(editor, {
+      match: (n: any) => n[format] === true,
+      universal: true,
+    });
+    return !!match;
+  }
+
+  const toggleMark = (editor: any, format: any) => {
+    const isActive = isMarkActive(editor, format);
+
+    if (isActive) {
+      SlateEditor.removeMark(editor, format);
+    } else {
+      SlateEditor.addMark(editor, format, true);
+    }
   };
 
   const isFontSizeActive = (editor: SlateEditor, setFontSize: Function) => {
@@ -135,6 +583,8 @@ export const Wysiwyg = ({
           float: "left",
           margin: "20px 20px 20px 0px",
           clear: "both",
+          width: image.width + "px",
+          height: image.height + "px",
         };
       }
       if (format === "image-right") {
@@ -142,12 +592,18 @@ export const Wysiwyg = ({
           float: "right",
           margin: "20px 0px 20px 20px",
           clear: "both",
+          width: image.width + "px",
+          height: image.height + "px",
         };
       }
       const img: any = {
         type: format,
-        style: style,
+        style: Object.assign(style, {
+          width: image.width + "px",
+          height: image.height + "px",
+        }),
         src: image.src,
+        alt: image.alt,
         children: [text],
       };
       /*   const d: CustomElement = { type: 'div', style: divStyle, children: [img] }; */
@@ -155,15 +611,18 @@ export const Wysiwyg = ({
       /*   Transforms.wrapNodes(editor, d); */
     } else {
       if (format === "image-center") {
-        style = {
+        style = Object.assign(style, {
           display: "block",
           margin: "0 auto",
-        };
+          width: image.width + "px",
+          height: image.height + "px",
+        });
       }
       const img: any = {
         type: format,
         style: style,
         src: image.src,
+        alt: image.alt,
         children: [text],
       };
 
@@ -294,6 +753,7 @@ export const Wysiwyg = ({
     youtubeHeight: string | number
   ) => {
     const { selection } = editor;
+    const text = { text: "", style: { display: "none" } };
     if (selection) {
       const [parent]: any = SlateEditor.parent(editor, selection.focus?.path);
       const videoId = youtubeUrl.substring(
@@ -317,7 +777,7 @@ export const Wysiwyg = ({
         youtubeUrl: url,
         width: youtubeWidth,
         height: youtubeHeight,
-        children: [{ text: " " }],
+        children: [text],
       };
 
       Transforms.insertNodes(editor, youtube);
@@ -457,7 +917,7 @@ export const Wysiwyg = ({
       </a>
     );
   };
-
+    
   const EditableButtonComponent = (props: any) => {
     const { attributes, element } = props;
     const { CTALeiras, CTAFunc, CTAColor, CTABgColor } = element;
@@ -523,44 +983,6 @@ export const Wysiwyg = ({
     );
   };
 
-  const RemoveLinkButton = (props: FormatButtonProps) => {
-    const { format, icon } = props;
-
-    return (
-      <ToolbarButton
-        active={isLinkActive(editor)}
-        format={format}
-        onClick={() => {
-          if (isLinkActive(editor)) {
-            unwrapLink(editor);
-          }
-        }}
-      >
-        <Icon buttonIcons={[icon]} className={icon} />
-      </ToolbarButton>
-    );
-  };
-
-  const ToggleEditableButtonButton = (props: FormatButtonProps) => {
-    const { format, icon } = props;
-    return (
-      <ToolbarButton
-        format={format}
-        active={isButtonActive(editor)}
-        onMouseDown={(event: any) => {
-          event.preventDefault();
-          if (isButtonActive(editor)) {
-            unwrapButton(editor);
-          } else {
-            toggleCTAModal();
-          }
-        }}
-      >
-        <Icon buttonIcons={[icon]} className={icon} />
-      </ToolbarButton>
-    );
-  };
-
   const addYoutube = (
     editor: SlateEditor,
     youtubeUrl: string,
@@ -580,8 +1002,8 @@ export const Wysiwyg = ({
     insertButton(editor, CTALeiras, CTAFunc, CTAColor, CTABgColor);
   };
 
-  const addEmoji = (editor: SlateEditor) => {
-    console.log("editor: ", editor);
+  const addEmoji = (editor: SlateEditor, emoji: string) => {
+    editor.insertText(emoji);
   };
 
   /* const isImageUrl = (url: string) => {
@@ -698,6 +1120,7 @@ export const Wysiwyg = ({
   );
   Editor = useRef(editor);
   const [fontSize, setFontSize] = useState("17px");
+  const [fontColor, setFontColor] = useState("#000000");
   const [imageModal, setImageModal] = useState(false);
   const [tableModal, setTableModal] = useState(false);
   const [linkModal, setLinkModal] = useState(false);
@@ -708,13 +1131,6 @@ export const Wysiwyg = ({
   const [format, setFormat] = useState("");
   const [modalValues, setModalvalues] = useState(defaultModalValues);
   const [images] = useState([]);
-
-  const toggleImageModal = (format?: any) => {
-    setImageModal(!imageModal);
-    if (format) {
-      setFormat(format);
-    }
-  };
 
   const toggleTableModal = (format?: any) => {
     setTableModal(!tableModal);
@@ -787,7 +1203,7 @@ export const Wysiwyg = ({
     let { attributes, children, leaf } = props;
     let style = leaf.style;
     let headingStyle = {
-      textAlign: style && style.textALign ? style.textAlign : undefined,
+      textAlign: style && style.textAlign ? style.textAlign : undefined,
     };
 
     if (leaf.bold) {
@@ -806,10 +1222,31 @@ export const Wysiwyg = ({
       children = <u>{children}</u>;
     }
 
-    return (
+    if (leaf.emoji) {
+      const newStyle = getStyleFromHtmlStyle(style, true);
+      children = (
+        <span style={newStyle} {...attributes} {...props}>
+          {leaf.emoji}
+        </span>
+      );
+    }
+
+    if (leaf.style) {
+      const newStyle = getStyleFromHtmlStyle(style, true);
+      children = (
+        <span style={newStyle} {...attributes} {...props}>
+          {children}
+        </span>
+      );
+    }
+
+    return leaf.style || leaf.emoji ? (
+      <React.Fragment>{children}</React.Fragment>
+    ) : (
       <span
-        style={isParentHeading(props) ? headingStyle : leaf.style}
+        style={isParentHeading(props) ? headingStyle : undefined}
         {...attributes}
+        {...props}
       >
         {children}
       </span>
@@ -819,18 +1256,18 @@ export const Wysiwyg = ({
   const renderLeaf = useCallback((props: any) => <Leaf {...props} />, []);
 
   const renderElement = useCallback((props: any) => {
-    let style = props.element.children.style || {};
+    let style = props.element.style || {};
     const { attributes, element, children } = props;
-    style["textAlign"] = { textAlign: props.element.align };
-    if (
-      props.element.type === "heading-1" ||
-      props.element.type === "heading-2" ||
-      props.element.type === "heading-3" ||
-      props.element.type === "heading-4" ||
-      props.element.type === "heading-5"
-    ) {
-      delete style["fontSize"];
-    }
+    // style["textAlign"] = { textAlign: props.element.align };
+    // if (
+    //   props.element.type === "heading-1" ||
+    //   props.element.type === "heading-2" ||
+    //   props.element.type === "heading-3" ||
+    //   props.element.type === "heading-4" ||
+    //   props.element.type === "heading-5"
+    // ) {
+    //   delete style["fontSize"];
+    // }
 
     switch (element.type) {
       case "block-quote":
@@ -930,10 +1367,7 @@ export const Wysiwyg = ({
                   padding: 10px;
                 `}
               >
-                <Icon
-                  className="fa-solid fa-trash"
-                  buttonIcons={["fa-solid fa-trash"]}
-                />
+                <Icon buttonIcons={[]} />
               </button>
             </div>
           </div>
@@ -978,10 +1412,7 @@ export const Wysiwyg = ({
                   padding: 10px;
                 `}
               >
-                <Icon
-                  buttonIcons={["fa-solid fa-trash"]}
-                  className="fa-solid fa-trash"
-                />
+                <Icon buttonIcons={[]} />
               </button>
             </div>
           </div>
@@ -1026,10 +1457,7 @@ export const Wysiwyg = ({
                   padding: 10px;
                 `}
               >
-                <Icon
-                  buttonIcons={["fa-solid fa-trash"]}
-                  className="fa-solid fa-trash"
-                />
+                <Icon buttonIcons={[]} />
               </button>
             </div>
           </div>
@@ -1067,10 +1495,7 @@ export const Wysiwyg = ({
                   padding: 10px;
                 `}
               >
-                <Icon
-                  buttonIcons={["fa-solid fa-trash"]}
-                  className="fa-solid fa-trash"
-                />
+                <Icon buttonIcons={[]} />
               </button>
             </div>
           </div>
@@ -1204,20 +1629,12 @@ export const Wysiwyg = ({
         const style = element.children.style;
         if (style) {
           return (
-            <p
-              align={element.align ? element.align : "left"}
-              style={style}
-              {...attributes}
-            >
+            <p style={style} {...attributes}>
               {children}
             </p>
           );
         } else {
-          return (
-            <p align={element.align ? element.align : "left"} {...attributes}>
-              {children}
-            </p>
-          );
+          return <p {...attributes}>{children}</p>;
         }
       }
     }
@@ -1308,7 +1725,14 @@ export const Wysiwyg = ({
           )}
         </ModalBody>
         <ModalFooter>
-          <Button onClick={() => addImage(editor, image)}>OK</Button>
+          <Button
+            onClick={() => {
+              addImage(editor, image);
+              toggleImageModal();
+            }}
+          >
+            OK
+          </Button>
           <Button type="button" onClick={toggleImageModal}>
             Mégsem
           </Button>
@@ -1541,14 +1965,15 @@ export const Wysiwyg = ({
         </ModalBody>
         <ModalFooter>
           <Button
-            onClick={() =>
+            onClick={() => {
               addYoutube(
                 editor,
                 modalValues.youtubeUrl,
                 modalValues.youtubeWidth,
                 modalValues.youtubeHeight
-              )
-            }
+              );
+              toggleYoutubeModal();
+            }}
           >
             Mentés
           </Button>
@@ -1651,10 +2076,26 @@ export const Wysiwyg = ({
         size="md"
       >
         <ModalHeader>Emoji hozzáadása</ModalHeader>
-        <ModalBody></ModalBody>
+        <ModalBody>
+          {EmojiList.map((emoji) => {
+            return (
+              <button
+                key={emoji.name}
+                style={{ fontSize: "25px" }}
+                onClick={() => {
+                  addEmoji(editor, emoji.id);
+                  setTimeout(() => {
+                    toggleEmojiModal();
+                  }, 200);
+                }}
+              >
+                <span>{emoji.id}</span>
+              </button>
+            );
+          })}
+        </ModalBody>
         <ModalFooter>
-          <Button onClick={() => addEmoji(editor)}>Mentés</Button>
-          <Button onClick={toggleEmojiModal}>Mégsem</Button>
+          <Button onClick={toggleEmojiModal}>OK</Button>
         </ModalFooter>
       </Modal>
     );
@@ -1666,370 +2107,187 @@ export const Wysiwyg = ({
     toggleFontsize(editor, value);
   };
 
-  function isMarkActive(editor: any, format: any) {
-    const [match] = SlateEditor.nodes(editor, {
-      match: (n: any) => n[format] === true,
-      universal: true,
-    });
-    return !!match;
-  }
-
-  const isBlockActive = (
-    editor: SlateEditor,
-    format: string,
-    blockType: any = "type"
-  ) => {
-    const obj: AccessNode = { keyName: blockType };
-    const { selection } = editor;
-    if (!selection) return false;
-    const [match] = Array.from(
-      SlateEditor.nodes(editor, {
-        at: SlateEditor.unhangRange(editor, selection),
-        match: (n: any) => {
-          return !SlateEditor.isEditor(n) && n[obj.keyName] === format;
-        },
-      })
-    );
-
-    return !!match;
+  const setFontCol = (e: any, editor: SlateEditor) => {
+    const value = e.target.value;
+    setFontColor(value);
+    toggleFontColor(editor, value);
   };
-
-  const toggleMark = (editor: any, format: any) => {
-    const isActive = isMarkActive(editor, format);
-
-    if (isActive) {
-      SlateEditor.removeMark(editor, format);
-    } else {
-      SlateEditor.addMark(editor, format, true);
-    }
-  };
-
-  function toggleBlock(editor: SlateEditor, format: any) {
-    const isActive = isBlockActive(editor, format);
-    const isList = LIST_TYPES.includes(format);
-
-    Transforms.unwrapNodes(editor, {
-      match: (n: any) => {
-        return (
-          !SlateEditor.isEditor(n) &&
-          LIST_TYPES.includes(n.type) &&
-          !TEXT_ALIGN_TYPES.includes(format)
-        );
-      },
-      split: true,
-    });
-
-    let newProperties: any = {};
-
-    if (TEXT_ALIGN_TYPES.includes(format)) {
-      const { selection } = editor;
-      if (selection) {
-        const [parent]: any = SlateEditor.parent(editor, selection.focus?.path);
-        let style = Object.assign({}, parent.style);
-        let f = format.substring(format.lastIndexOf("-") + 1, format.length);
-        const newStyle = Object.assign(style, { textAlign: f });
-
-        newProperties = {
-          align: isActive ? undefined : f,
-          style: newStyle,
-          type: `align-${f}`,
-        };
-      }
-    } else {
-      newProperties = {
-        type: isActive ? "paragraph" : isList ? "list-item" : format,
-        align: isActive ? undefined : format,
-      };
-    }
-
-    Transforms.setNodes<SlateElement>(editor, newProperties);
-
-    if (!isActive && isList) {
-      const block = { type: format, children: [] };
-      Transforms.wrapNodes(editor, block);
-    }
-  }
 
   const toggleFontsize = (editor: SlateEditor, value: string) => {
     const { selection } = editor;
     if (selection) {
-      const [parent]: any = SlateEditor.parent(editor, selection.focus?.path);
-      let style = Object.assign({}, parent.style);
+      const [selectedText]: any = SlateEditor.leaf(editor, selection);
+      let style = Object.assign({}, selectedText.style);
       let newStyle = Object.assign(style, { fontSize: value });
-      const newParameters: any = {
-        style: newStyle,
-      };
-      Transforms.setNodes(editor, newParameters);
-      SlateEditor.addMark(editor, "style", newParameters.style);
+      editor.addMark("style", newStyle);
     }
   };
 
-  const BlockButton = (props: FormatButtonProps) => {
-    const { format, icon, colors } = props;
-    const headingNumberIndex = format.indexOf("-");
-    const headingNumber =
-      icon === "fa fa-header" && format.slice(headingNumberIndex + 1);
-    return (
-      <ToolbarButton
-        reserved={reserved}
-        className="block_button"
-        active={isBlockActive(editor, format)}
-        onMouseDown={(event: MouseEvent) => {
-          event.preventDefault();
-          toggleBlock(editor, format);
-        }}
-        colors={colors}
-      >
-        {icon === "fa fa-header" ? (
-          <>
-            <Icon buttonIcons={[icon]} className={icon} />
-            {headingNumber && headingNumber}
-          </>
-        ) : (
-          <Icon buttonIcons={[icon]} className={icon} />
-        )}
-      </ToolbarButton>
-    );
-  };
-
-  const MarkButton = (props: FormatButtonProps) => {
-    const { format, icon, colors } = props;
-
-    return (
-      <ToolbarButton
-        className="mark_button"
-        active={isMarkActive(editor, format)}
-        reserved={reserved}
-        onMouseDown={(event: MouseEvent) => {
-          event.preventDefault();
-          toggleMark(editor, format);
-        }}
-        colors={colors}
-      >
-        <Icon buttonIcons={[icon]} className={icon} />
-      </ToolbarButton>
-    );
-  };
-
-  const ImageButton = (props: FormatButtonProps) => {
-    const { icon, format } = props;
-    const align = format.substring(format.indexOf("-") + 1, format.length);
-    const plusIcon =
-      align === "image"
-        ? `fa-solid fa-align-justify`
-        : `fa-solid fa-align-${align}`;
-    return (
-      <ToolbarButton
-        className="image_button"
-        onClick={() => toggleImageModal(format)}
-      >
-        <Icon buttonIcons={[plusIcon, icon]} className={icon} />
-      </ToolbarButton>
-    );
-  };
-
-  const TableButton = (props: FormatButtonProps) => {
-    const { icon, format } = props;
-    const align = format.substring(format.indexOf("-") + 1, format.length);
-    const plusIcon = `fa-solid fa-align-${align}`;
-    return (
-      <ToolbarButton
-        className="table_button"
-        onClick={() => toggleTableModal(format)}
-      >
-        <Icon buttonIcons={[plusIcon, icon]} className={icon} />
-      </ToolbarButton>
-    );
-  };
-
-  const LinkButton = (props: FormatButtonProps) => {
-    const { icon } = props;
-    return (
-      <ToolbarButton
-        active={isLinkActive(editor)}
-        className="link_button"
-        onClick={() => toggleLinkModal()}
-      >
-        <Icon buttonIcons={[icon]} className={icon} />
-      </ToolbarButton>
-    );
-  };
-
-  const YoutubeButton = (props: FormatButtonProps) => {
-    const { icon } = props;
-    return (
-      <ToolbarButton
-        className="youtube_button"
-        onClick={() => toggleYoutubeModal()}
-      >
-        <Icon buttonIcons={[icon]} className={icon} />
-      </ToolbarButton>
-    );
-  };
-
-  /* const EmojiButton = (props: FormatButtonProps) => {
-        const { icon } = props;
-        return (
-            <ToolbarButton className="emoji_button" onClick={() => toggleEmojiModal()}>
-                <Icon buttonIcons={[icon]} className={icon} />
-            </ToolbarButton>
-        );
-    }; */
-
-  const FontsizeButton = (props: any): any => {
-    const { format } = props;
-    return (
-      <ToolbarButton
-        className="font_button"
-        style={{ position: "relative", top: "-3px", left: "15px" }}
-        onMouseUp={() => {}}
-        name={format}
-        active={isFontSizeActive(editor, setFontSize)}
-      >
-        <select
-          value={fontSize}
-          onChange={(e) => {
-            setFont(e, editor);
-          }}
-          className="font_button"
-          onMouseUp={() => {}}
-          name={format}
-        >
-          <option key="17px" value="17px">
-            17 px
-          </option>
-          <option key="18px" value="18px">
-            18 px
-          </option>
-          <option key="19px" value="19px">
-            19 px
-          </option>
-          <option key="20px" value="20px">
-            20 px
-          </option>
-          <option key="21px" value="21px">
-            21 px
-          </option>
-          <option key="22px" value="22px">
-            22 px
-          </option>
-          <option key="23px" value="23px">
-            23 px
-          </option>
-          <option key="24px" value="24px">
-            24 px
-          </option>
-          <option key="25px" value="25px">
-            25 px
-          </option>
-        </select>
-      </ToolbarButton>
-    );
+  const toggleFontColor = (editor: SlateEditor, value: string) => {
+    const { selection } = editor;
+    if (selection) {
+      const [selectedText]: any = SlateEditor.leaf(editor, selection);
+      let style = Object.assign({}, selectedText.style);
+      let newStyle = Object.assign(style, { color: value });
+      editor.addMark("style", newStyle);
+    }
   };
 
   return (
-    <div style={{ display: "inline-grid", width: "100%" }}>
-      <Slate
-        editor={editor}
-        initialValue={value}
-        onChange={(v: any) => {
-          if (onChange) {
-            onChange(v);
-          }
-        }}
+    <React.Fragment>
+      <Component
+        className={`wysiwyg-app ${className}`}
+        style={{ display: "inline-grid", width: "100%" }}
+        value={value}
+        onChange={onChange}
+        id={id}
+        colors={colors}
+        placeholder={placeholder}
+        uploadType={uploadType}
+        customButtons={customButtons}
       >
-        <Toolbar className="wysiwyg-editor-toolbar">
-          <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
-          <MarkButton format="italic" icon="fa fa-italic" colors={colors} />
-          <MarkButton
-            format="underline"
-            icon="fa fa-underline"
-            colors={colors}
-          />
-          <MarkButton format="code" icon="fa fa-code" colors={colors} />
-          <BlockButton format="heading-1" icon="fa fa-header" colors={colors} />
-          <BlockButton format="heading-2" icon="fa fa-header" colors={colors} />
-          <BlockButton format="heading-3" icon="fa fa-header" colors={colors} />
-          <BlockButton format="heading-4" icon="fa fa-header" colors={colors} />
-          <BlockButton format="heading-5" icon="fa fa-header" colors={colors} />
-          <FontsizeButton format="fontSizeButton" icon={"fontSizeButton"} />
-        </Toolbar>
-        <Toolbar className="wysiwyg-editor-toolbar">
-          <BlockButton
-            format="block-quote"
-            icon="fa-solid fa-indent"
-            colors={colors}
-          />
-          <BlockButton
-            format="numbered-list"
-            icon="fa-solid fa-list-ol"
-            colors={colors}
-          />
-          <BlockButton
-            format="bulleted-list"
-            icon="fa-solid fa-list-ul"
-            colors={colors}
-          />
-          <BlockButton
-            format="align-left"
-            icon="fa-solid fa-align-left"
-            colors={colors}
-          />
-          <BlockButton
-            format="align-center"
-            icon="fa-solid fa-align-center"
-            colors={colors}
-          />
-          <BlockButton
-            format="align-right"
-            icon="fa-solid fa-align-right"
-            colors={colors}
-          />
-          <BlockButton
-            format="align-justify"
-            icon="fa-solid fa-align-justify"
-            colors={colors}
-          />
-        </Toolbar>
-        <Toolbar className="wysiwyg-editor-toolbar">
-          <ImageButton format="image" icon="fa-regular fa-image" />
-          <ImageButton format="image-center" icon="fa-regular fa-image" />
-          <ImageButton format="image-left" icon="fa-regular fa-image" />
-          <ImageButton format="image-right" icon="fa-regular fa-image" />
-          <TableButton format="table-left" icon="fa-solid fa-table" />
-          <TableButton format="table-center" icon="fa-solid fa-table" />
-          <TableButton format="table-right" icon="fa-solid fa-table" />
-        </Toolbar>
-        <Toolbar className="wysiwyg-editor-toolbar">
-          <LinkButton format="link" icon="fa-solid fa-link" />
-          <RemoveLinkButton format="removelink" icon="fa-solid fa-unlink" />
-          <YoutubeButton format="youtube" icon="fa-brands fa-youtube" />
-          <ToggleEditableButtonButton
-            format="CTA"
-            icon="fa-solid fa-earth-europe"
-          />
-          {/* <EmojiButton format="emoji" icon="fa-regular fa-face-smile" /> */}
-        </Toolbar>
-        <Toolbar className="wysiwyg-editor-toolbar">
-          {renderCustomButtons()}
-        </Toolbar>
-        <Editable
-          id={id}
-          style={defaultStyle}
-          className={className}
-          placeholder={placeholder}
-          renderLeaf={renderLeaf}
-          renderElement={renderElement}
-        />
-      </Slate>
-      <div>
-        {imageModal ? renderImageModal() : ""}
-        {renderTableModal()}
-        {renderLinkModal()}
-        {renderYoutubeModal()}
-        {renderCTAModal()}
-        {renderEmojiModal()}
-      </div>
-    </div>
+        <SharedAppContext.Provider
+          value={{
+            value: value,
+            onChange: onChange,
+            id: id,
+            colors: colors,
+            placeholder: placeholder,
+            uploadType: uploadType,
+            customButtons: customButtons,
+            toggleBlock: toggleBlock,
+            toggleMark: toggleMark,
+            toggleFontColor: toggleFontColor,
+            toggleFontsize: toggleFontsize,
+            toggleCTAModal: toggleCTAModal,
+            toggleEmojiModal: toggleEmojiModal,
+            toggleImageModal: toggleImageModal,
+            toggleLinkModal: toggleLinkModal,
+            toggleTableModal: toggleTableModal,
+            toggleYoutubeModal: toggleYoutubeModal,
+            isBlockActive: isBlockActive,
+            isMarkActive: isMarkActive,
+            isLinkActive: isLinkActive,
+            isButtonActive: isButtonActive,
+            isUrl: isUrl,
+            isFontSizeActive: isFontSizeActive,
+            addText: addText,
+            unwrapLink: unwrapLink,
+            unwrapButton: unwrapButton,
+            editor: editor,
+            fontSize: fontSize,
+            fontColor: fontColor,
+            setFontColor: setFontColor,
+            setFontCol: setFontCol,
+            setFontSize: setFontSize,
+            setFont: setFont,
+          }}
+        >
+          <Slate
+            editor={editor}
+            initialValue={value}
+            onChange={(v: any) => {
+              if (onChange) {
+                onChange(v);
+              }
+            }}
+          >
+            {children}
+            <Editable
+              className={`react-slate-wysiwyg-editor ${editorClass}`}
+              id={id}
+              style={defaultStyle}
+              placeholder={placeholder}
+              renderLeaf={renderLeaf}
+              renderElement={renderElement}
+            />
+          </Slate>
+        </SharedAppContext.Provider>
+
+        {/* <Toolbar className="wysiwyg-editor-toolbar">
+            <MarkButton format="bold" icon="fa fa-bold" colors={colors} />
+            <MarkButton format="italic" icon="fa fa-italic" colors={colors} />
+            <MarkButton
+              format="underline"
+              icon="fa fa-underline"
+              colors={colors}
+            />
+            <MarkButton format="code" icon="fa fa-code" colors={colors} />
+            <BlockButton format="heading-1" icon="fa fa-header" colors={colors} />
+            <BlockButton format="heading-2" icon="fa fa-header" colors={colors} />
+            <BlockButton format="heading-3" icon="fa fa-header" colors={colors} />
+            <BlockButton format="heading-4" icon="fa fa-header" colors={colors} />
+            <BlockButton format="heading-5" icon="fa fa-header" colors={colors} />
+            <FontsizeButton format="fontSizeButton" icon={"fontSizeButton"} />
+          </Toolbar>
+          <Toolbar className="wysiwyg-editor-toolbar">
+            <BlockButton
+              format="block-quote"
+              icon="fa-solid fa-indent"
+              colors={colors}
+            />
+            <BlockButton
+              format="numbered-list"
+              icon="fa-solid fa-list-ol"
+              colors={colors}
+            />
+            <BlockButton
+              format="bulleted-list"
+              icon="fa-solid fa-list-ul"
+              colors={colors}
+            />
+            <BlockButton
+              format="align-left"
+              icon="fa-solid fa-align-left"
+              colors={colors}
+            />
+            <BlockButton
+              format="align-center"
+              icon="fa-solid fa-align-center"
+              colors={colors}
+            />
+            <BlockButton
+              format="align-right"
+              icon="fa-solid fa-align-right"
+              colors={colors}
+            />
+            <BlockButton
+              format="align-justify"
+              icon="fa-solid fa-align-justify"
+              colors={colors}
+            />
+          </Toolbar>
+          <Toolbar className="wysiwyg-editor-toolbar">
+            <ImageButton format="image" icon="fa-regular fa-image" />
+            <ImageButton format="image-center" icon="fa-regular fa-image" />
+            <ImageButton format="image-left" icon="fa-regular fa-image" />
+            <ImageButton format="image-right" icon="fa-regular fa-image" />
+            <TableButton format="table-left" icon="fa-solid fa-table" />
+            <TableButton format="table-center" icon="fa-solid fa-table" />
+            <TableButton format="table-right" icon="fa-solid fa-table" />
+          </Toolbar>
+          <Toolbar className="wysiwyg-editor-toolbar">
+            <LinkButton format="link" icon="fa-solid fa-link" />
+            <RemoveLinkButton format="removelink" icon="fa-solid fa-unlink" />
+            <YoutubeButton format="youtube" icon="fa-brands fa-youtube" />
+            <ToggleEditableButtonButton
+              format="CTA"
+              icon="fa-solid fa-earth-europe"
+            />
+            // <EmojiButton format="emoji" icon="fa-regular fa-face-smile" />
+          </Toolbar>
+          <Toolbar className="wysiwyg-editor-toolbar">
+            {renderCustomButtons()}
+          </Toolbar> */}
+      </Component>
+      {imageModal ? renderImageModal() : ""}
+      {renderTableModal()}
+      {renderLinkModal()}
+      {renderYoutubeModal()}
+      {renderCTAModal()}
+      {renderEmojiModal()}
+    </React.Fragment>
   );
 };
+
+export const SharedAppConsumer = SharedAppContext.Consumer;

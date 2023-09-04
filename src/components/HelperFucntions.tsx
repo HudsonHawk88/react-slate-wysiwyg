@@ -19,6 +19,10 @@ const getHtmlStyleKey = (styleKey: string) => {
       key.toLowerCase().substring(upperPosition, key.length)
     : key;
 
+
+  if (key === "fontColor") {
+    newKey = "color";
+  }
   return newKey;
 };
 
@@ -257,16 +261,25 @@ export const getNode = (node: any, ch?: any) => {
   }
 };
 
-export const getStyleFromHtmlStyle = (style: string) => {
+export const getStyleFromHtmlStyle = (
+  style: string,
+  toReactStyle?: boolean
+) => {
   const key: any = style || {};
-  const newStyle = {};
+  let newStyle = {};
   Object.keys(key).forEach((s) => {
     if (key[s] !== "" && isNaN(parseInt(s))) {
-      Object.assign(newStyle, { [s]: key[s] });
+      Object.assign(
+        newStyle,
+        s === "color" && !toReactStyle
+          ? { ["color"]: key["color"] }
+          : { [s]: key[s] }
+      );
     }
   });
 
-  return newStyle;
+  let res = newStyle ? newStyle : undefined;
+  return res;
 };
 
 export const getElementsFromHtml = (html: string) => {

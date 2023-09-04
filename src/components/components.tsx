@@ -1,6 +1,23 @@
 import React, { Ref, PropsWithChildren } from "react";
 import ReactDOM from "react-dom";
 import { cx, css } from "@emotion/css";
+import {
+  BlockButton,
+  CustomButton,
+  FontColorButton,
+  FontsizeButton,
+  ImageButton,
+  LinkButton,
+  MarkButton,
+  RemoveLinkButton,
+  SharedAppConsumer,
+  TableButton,
+  ToggleEditableButtonButton,
+  YoutubeButton,
+  EmojiButton,
+} from "./Wysiwyg";
+import { defaultColors } from "./InitilValue";
+import { CustomTooolbarButton } from "./InterfacesAndTypes";
 
 interface BaseProps {
   className: string;
@@ -9,7 +26,7 @@ interface BaseProps {
 
 interface HtmlAttributesWithButtonIcons
   extends React.HTMLAttributes<HTMLElement> {
-  buttonIcons: string[];
+  buttonIcons: any;
 }
 
 type RefButtonObject = Ref<HTMLButtonElement>;
@@ -22,6 +39,27 @@ export const CustomToolbar = React.forwardRef(
     ref: RefDivObject
   ) => {
     return <Menu {...props} ref={ref} className={className} />;
+  }
+);
+
+export const ToolbarGroup = React.forwardRef(
+  (
+    {
+      as: Component = "div",
+      className,
+      children,
+      ...props
+    }: PropsWithChildren<BaseProps>,
+    ref: RefDivObject
+  ) => {
+    return (
+      <Component
+        {...props}
+        className={`$react-slate-wysiwyg toolbargroup ${className}`}
+      >
+        {children}
+      </Component>
+    );
   }
 );
 
@@ -53,14 +91,14 @@ export const ToolbarButton = React.forwardRef(
             className={cx(
               className,
               css`
-                cursor: pointer;
+                cursor: pointer !important;
                 color: ${reversed
                   ? active
                     ? colors.reverse.activeColor
                     : colors.reverse.color
                   : active
                   ? colors.normal.activeColor
-                  : colors.normal.color};
+                  : colors.normal.color} !important;
               `
             )}
           />
@@ -74,7 +112,7 @@ export const ToolbarButton = React.forwardRef(
             className={cx(
               className,
               css`
-                cursor: pointer;
+                cursor: pointer !important;
               `
             )}
           />
@@ -147,21 +185,16 @@ const iconButton = (
 ) => {
   return (
     <React.Fragment>
-      {buttonIcons.map((icon: string) => {
-        return <i {...rest} ref={ref} key={icon} className={icon} />;
-      })}
+      {buttonIcons.length === 0 ? (
+        <i>&#10060;</i>
+      ) : (
+        buttonIcons.map((icon: string) => {
+          return <i {...rest} ref={ref} key={icon} className={icon} />;
+        })
+      )}
     </React.Fragment>
   );
 };
-
-/* export const Icon = React.forwardRef(({ props }: StyledTextareaInputProps, ref: RefDivObject) => {
-    console.log(props);
-    props.buttonIcons.map((icon: string) => {
-        return (
-            <i {...props} ref={ref} className={icon} />
-        );
-    })
-}); */
 
 export const Icon = React.forwardRef(iconButton);
 
@@ -192,5 +225,244 @@ export const Toolbar = React.forwardRef(
     ref: RefDivObject
   ) => {
     return <Menu {...props} ref={ref} className={className} />;
+  }
+);
+
+export const ToolbarItem = React.forwardRef(
+  (
+    {
+      type = "",
+      format = "",
+      icon = "",
+      text = "",
+      colors = defaultColors,
+      ...rest
+    }: CustomTooolbarButton,
+    ref: RefButtonObject
+  ) => {
+    let element = <button></button>;
+
+    if (type === "block") {
+      element = (
+        <SharedAppConsumer>
+          {(propps: any) => {
+            return (
+              <BlockButton
+                ref={ref}
+                format={format}
+                icon={icon}
+                colors={propps.colors}
+                {...propps}
+                {...rest}
+              />
+            );
+          }}
+        </SharedAppConsumer>
+      );
+    }
+
+    if (type === "mark") {
+      element = (
+        <SharedAppConsumer>
+          {(props: any) => {
+            return (
+              <MarkButton
+                ref={ref}
+                format={format}
+                icon={icon}
+                colors={props.colors}
+                {...props}
+                {...rest}
+              />
+            );
+          }}
+        </SharedAppConsumer>
+      );
+    }
+
+    if (type === "fontColor") {
+      element = (
+        <SharedAppConsumer>
+          {(props: any) => {
+            return (
+              <FontColorButton ref={ref} format={format} {...props} {...rest} />
+            );
+          }}
+        </SharedAppConsumer>
+      );
+    }
+
+    if (type === "fontsize") {
+      element = (
+        <SharedAppConsumer>
+          {(props) => {
+            return (
+              <FontsizeButton
+                ref={ref}
+                format={format}
+                icon={icon}
+                colors={colors}
+                {...props}
+                {...rest}
+              />
+            );
+          }}
+        </SharedAppConsumer>
+      );
+    }
+
+    if (type === "table") {
+      element = (
+        <SharedAppConsumer>
+          {(props) => {
+            return (
+              <TableButton
+                ref={ref}
+                format={format}
+                icon={icon}
+                colors={colors}
+                {...props}
+                {...rest}
+              />
+            );
+          }}
+        </SharedAppConsumer>
+      );
+    }
+
+    if (type === "link") {
+      element = (
+        <SharedAppConsumer>
+          {(props: any) => {
+            return (
+              <LinkButton
+                ref={ref}
+                format={format}
+                icon={icon}
+                colors={props.colors}
+                {...props}
+                {...rest}
+              />
+            );
+          }}
+        </SharedAppConsumer>
+      );
+    }
+
+    if (type === "removelink") {
+      element = (
+        <SharedAppConsumer>
+          {(props) => {
+            return (
+              <RemoveLinkButton
+                ref={ref}
+                format={format}
+                icon={icon}
+                colors={colors}
+                {...props}
+                {...rest}
+              />
+            );
+          }}
+        </SharedAppConsumer>
+      );
+    }
+
+    if (type === "image") {
+      element = (
+        <SharedAppConsumer>
+          {(props) => {
+            return (
+              <ImageButton
+                ref={ref}
+                format={format}
+                icon={icon}
+                colors={colors}
+                {...props}
+                {...rest}
+              />
+            );
+          }}
+        </SharedAppConsumer>
+      );
+    }
+
+    if (type === "cta") {
+      element = (
+        <SharedAppConsumer>
+          {(props) => {
+            return (
+              <ToggleEditableButtonButton
+                ref={ref}
+                format={format}
+                icon={icon}
+                colors={colors}
+                {...props}
+                {...rest}
+              />
+            );
+          }}
+        </SharedAppConsumer>
+      );
+    }
+
+    if (type === "youtube") {
+      element = (
+        <SharedAppConsumer>
+          {(props) => {
+            return (
+              <YoutubeButton
+                ref={ref}
+                format={format}
+                icon={icon}
+                colors={colors}
+                {...props}
+                {...rest}
+              />
+            );
+          }}
+        </SharedAppConsumer>
+      );
+    }
+
+    if (type === "emoji") {
+      element = (
+        <SharedAppConsumer>
+          {(props) => {
+            return (
+              <EmojiButton
+                ref={ref}
+                format={format}
+                icon={icon}
+                {...props}
+                {...rest}
+              />
+            );
+          }}
+        </SharedAppConsumer>
+      );
+    }
+
+    if (type === "custom") {
+      element = (
+        <SharedAppConsumer>
+          {(props) => {
+            return (
+              <CustomButton
+                ref={ref}
+                text={text}
+                format={format}
+                icon={icon}
+                colors={colors}
+                {...props}
+                {...rest}
+              />
+            );
+          }}
+        </SharedAppConsumer>
+      );
+    }
+
+    return element;
   }
 );

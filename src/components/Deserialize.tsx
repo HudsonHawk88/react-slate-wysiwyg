@@ -32,6 +32,10 @@ export const deserialize = (
       nodeAttributes.code = true;
       break;
     }
+    case "SPAN": {
+      nodeAttributes.style = style ? style : undefined;
+      break;
+    }
   }
 
   const children = Array.from(el.childNodes)

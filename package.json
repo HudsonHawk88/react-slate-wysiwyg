@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "start": "react-scripts start",
-    "build": "prettier --write src/ && npm run build:esm && npm run build:cjs",
+    "build": "rm -rf dist && prettier --write src/ && npm run build:esm && npm run build:cjs",
     "build:esm": "tsc",
     "build:cjs": "tsc --module CommonJS --outDir dist/cjs",
     "build-rollup": "webpack --mode production --config webpack.config.js",
@@ -43,6 +43,7 @@
     "raw-loader": "^4.0.2",
     "reactstrap": "9.1.5",
     "sass-loader": "^13.2.0",
+    "slate": "0.94.1",
     "slate-history": "^0.93.0",
     "slate-hyperscript": "^0.77.0",
     "slate-react": "^0.95.0",
