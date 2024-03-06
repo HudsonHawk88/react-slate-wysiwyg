@@ -40,7 +40,6 @@ function getStilus(style: any) {
 }
 
 export const serialize = (nodes: CustomElement[] | Node[]) => {
-    console.log('NODES: ', nodes);
     let result =
         Array.isArray(nodes) && nodes.length > 0
             ? nodes.map((node: any): string[] => {
@@ -48,7 +47,6 @@ export const serialize = (nodes: CustomElement[] | Node[]) => {
                       node.children &&
                       node.children.map((nn: any): any => {
                           if (Text.isText(nn) || (nn.style && nn.type !== 'button' && nn.style && nn.type !== 'table' && nn.style && nn.type !== 'table-row') || (nn.style && nn.emoji)) {
-                              console.log('NN: ', nn);
                               let string = escapeHtml(nn.text);
                               if (nn.bold) {
                                   string = `<strong>${string}</strong>`;
