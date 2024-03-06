@@ -16,7 +16,7 @@ import {
     YoutubeButton,
     EmojiButton
 } from './Wysiwyg';
-import { defaultColors } from './InitilValue';
+import { defaultColors } from './InitialValue';
 import { CustomTooolbarButton } from './InterfacesAndTypes';
 
 interface BaseProps {

@@ -40,36 +40,42 @@ function getStilus(style: any) {
 }
 
 export const serialize = (nodes: CustomElement[] | Node[]) => {
-    let result = nodes.map((node: any): string[] => {
-        const children =
-            node.children &&
-            node.children.map((nn: any): any => {
-                if (Text.isText(nn) || (nn.style && nn.type !== 'button') || (nn.style && nn.emoji)) {
-                    let string = escapeHtml(nn.text);
-                    if (nn.bold) {
-                        string = `<strong>${string}</strong>`;
-                    }
-                    if (nn.code) {
-                        string = `<code>${string}</code>`;
-                    }
-                    if (nn.italic) {
-                        string = `<em>${string}</em>`;
-                    }
-                    if (nn.underline) {
-                        string = `<u>${string}</u>`;
-                    }
-                    if (nn.style) {
-                        string = `<span style="${getStilus(nn.style)}">${string}</span>`;
-                    }
-                    return string;
-                } else {
-                    const ch = getNode(nn, nn['children']);
-                    return ch;
-                }
-            });
-        const ch = getNode(node, children);
-        return ch;
-    });
+    console.log('NODES: ', nodes);
+    let result =
+        Array.isArray(nodes) && nodes.length > 0
+            ? nodes.map((node: any): string[] => {
+                  const children =
+                      node.children &&
+                      node.children.map((nn: any): any => {
+                          if (Text.isText(nn) || (nn.style && nn.type !== 'button' && nn.style && nn.type !== 'table' && nn.style && nn.type !== 'table-row') || (nn.style && nn.emoji)) {
+                              console.log('NN: ', nn);
+                              let string = escapeHtml(nn.text);
+                              if (nn.bold) {
+                                  string = `<strong>${string}</strong>`;
+                              }
+                              if (nn.code) {
+                                  string = `<code>${string}</code>`;
+                              }
+                              if (nn.italic) {
+                                  string = `<em>${string}</em>`;
+                              }
+                              if (nn.underline) {
+                                  string = `<u>${string}</u>`;
+                              }
+                              if (nn.style && nn.type !== 'table' && nn.type !== 'table-row') {
+                                  string = `<span style="${getStilus(nn.style)}">${string}</span>`;
+                              }
+                              return string;
+                          } else {
+                              const ch = getNode(nn, nn['children']);
+                              // const ch = getNode(nn);
+                              return ch;
+                          }
+                      });
+                  const ch = getNode(node, children);
+                  return ch;
+              })
+            : [''];
     let serialized = result.join('');
     return serialized;
 };

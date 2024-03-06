@@ -17,7 +17,7 @@ import {
     AccessNode,
     CustomText
 } from './InterfacesAndTypes';
-import { initialValue, defaultColors, defaultImage, defaultStyle } from './InitilValue';
+import { initialValue, defaultColors, defaultImage, defaultStyle } from './InitialValue';
 import { EmojiList } from './Emojis';
 import { getStyleFromHtmlStyle } from './HelperFucntions';
 
@@ -349,6 +349,142 @@ export const Wysiwyg = ({
     onChange,
     as: Component = 'div'
 }: WysiwygProps) => {
+    const defaultModalValues = {
+        tableClass: 'wysiwyg-table',
+        rowNumber: '',
+        colNumber: '',
+        textAlign: '',
+        linkUrl: '',
+        linkFontColor: '',
+        linkDesc: '',
+        youtubeUrl: '',
+        youtubeWidth: '',
+        youtubeHeight: '',
+        CTALeiras: '',
+        CTABgColor: '',
+        CTAFontColor: '',
+        CTAFunc: ''
+    };
+
+    const withTables = (editor: SlateEditor) => {
+        const { deleteBackward, deleteForward, insertBreak } = editor;
+
+        editor.deleteBackward = (unit) => {
+            const { selection } = editor;
+
+            if (selection && Range.isCollapsed(selection)) {
+                const [cell] = SlateEditor.nodes(editor, {
+                    match: (n: any) => !SlateEditor.isEditor(n) && n.type === 'table-cell'
+                });
+
+                if (cell) {
+                    const [, cellPath] = cell;
+                    const start = SlateEditor.start(editor, cellPath);
+
+                    if (Point.equals(selection.anchor, start)) {
+                        return;
+                    }
+                }
+            }
+
+            deleteBackward(unit);
+        };
+
+        editor.deleteForward = (unit) => {
+            const { selection } = editor;
+
+            if (selection && Range.isCollapsed(selection)) {
+                const [cell] = SlateEditor.nodes(editor, {
+                    match: (n: any) => !SlateEditor.isEditor(n) && n.type === 'table-cell'
+                });
+
+                if (cell) {
+                    const [, cellPath] = cell;
+                    const end = SlateEditor.end(editor, cellPath);
+
+                    if (Point.equals(selection.anchor, end)) {
+                        return;
+                    }
+                }
+            }
+
+            deleteForward(unit);
+        };
+
+        editor.insertBreak = () => {
+            const { selection } = editor;
+
+            if (selection) {
+                const [table] = SlateEditor.nodes(editor, {
+                    match: (n: any) => !SlateEditor.isEditor(n) && n.type === 'table'
+                });
+
+                if (table) {
+                    return;
+                }
+            }
+
+            insertBreak();
+        };
+
+        return editor;
+    };
+
+    const withImages = (editor: SlateEditor) => {
+        const { isVoid } = editor;
+
+        editor.isVoid = (element: any) => {
+            return element.type === 'image' || element.type === 'image-center' || element.type === 'image-right' || element.type === 'image-left' ? true : isVoid(element);
+        };
+
+        return editor;
+    };
+
+    const withInlines = (editor: ReactEditor) => {
+        const { insertData, insertText, isInline, isElementReadOnly, isSelectable } = editor;
+
+        editor.isInline = (element: any) => ['link', 'button', 'badge'].includes(element.type) || isInline(element);
+
+        editor.isElementReadOnly = (element: any) => element.type === 'badge' || isElementReadOnly(element);
+
+        editor.isSelectable = (element: any) => element.type !== 'badge' && isSelectable(element);
+
+        editor.insertText = (text) => {
+            if (text && isUrl(text)) {
+                wrapLink(editor, text);
+            } else {
+                insertText(text);
+            }
+        };
+
+        editor.insertData = (data) => {
+            const text = data.getData('text/plain');
+
+            if (text && isUrl(text)) {
+                wrapLink(editor, text);
+            } else {
+                insertData(data);
+            }
+        };
+
+        return editor;
+    };
+
+    const editor: any = useMemo(() => withImages(withTables(withInlines(withHistory(withReact(createEditor()))))), []);
+    Editor = useRef(editor);
+    const [fontSize, setFontSize] = useState('17px');
+    const [fontColor, setFontColor] = useState('#000000');
+    const [imageModal, setImageModal] = useState(false);
+    const [tableModal, setTableModal] = useState(false);
+    const [linkModal, setLinkModal] = useState(false);
+    const [youtubeModal, setYoutubeModal] = useState(false);
+    const [CTAModal, setCTAModal] = useState(false);
+    const [emojiModal, setEmojiModal] = useState(false);
+    const [image, setImage] = useState(defaultImage);
+    const [format, setFormat] = useState('');
+    const [modalValues, setModalvalues] = useState(defaultModalValues);
+    const [images] = useState([]);
+
     const toggleImageModal = (format?: any) => {
         setImageModal(!imageModal);
         if (format) {
@@ -570,7 +706,7 @@ export const Wysiwyg = ({
         }
 
         const table = {
-            type: format,
+            type: 'table',
             style: tableStyle,
             className: tableClass,
             children: rows
@@ -578,36 +714,6 @@ export const Wysiwyg = ({
 
         Transforms.insertNodes(editor, table);
         toggleTableModal();
-    };
-
-    const withInlines = (editor: ReactEditor) => {
-        const { insertData, insertText, isInline, isElementReadOnly, isSelectable } = editor;
-
-        editor.isInline = (element: any) => ['link', 'button', 'badge'].includes(element.type) || isInline(element);
-
-        editor.isElementReadOnly = (element: any) => element.type === 'badge' || isElementReadOnly(element);
-
-        editor.isSelectable = (element: any) => element.type !== 'badge' && isSelectable(element);
-
-        editor.insertText = (text) => {
-            if (text && isUrl(text)) {
-                wrapLink(editor, text);
-            } else {
-                insertText(text);
-            }
-        };
-
-        editor.insertData = (data) => {
-            const text = data.getData('text/plain');
-
-            if (text && isUrl(text)) {
-                wrapLink(editor, text);
-            } else {
-                insertData(data);
-            }
-        };
-
-        return editor;
     };
 
     const insertLink = (editor: SlateEditor, url: string, text: string, color: string) => {
@@ -855,112 +961,6 @@ export const Wysiwyg = ({
         const ext = new URL(url).pathname.split('.').pop() || '';
         return imageExtensions.includes(ext);
     }; */
-
-    const withTables = (editor: SlateEditor) => {
-        const { deleteBackward, deleteForward, insertBreak } = editor;
-
-        editor.deleteBackward = (unit) => {
-            const { selection } = editor;
-
-            if (selection && Range.isCollapsed(selection)) {
-                const [cell] = SlateEditor.nodes(editor, {
-                    match: (n: any) => !SlateEditor.isEditor(n) && n.type === 'table-cell'
-                });
-
-                if (cell) {
-                    const [, cellPath] = cell;
-                    const start = SlateEditor.start(editor, cellPath);
-
-                    if (Point.equals(selection.anchor, start)) {
-                        return;
-                    }
-                }
-            }
-
-            deleteBackward(unit);
-        };
-
-        editor.deleteForward = (unit) => {
-            const { selection } = editor;
-
-            if (selection && Range.isCollapsed(selection)) {
-                const [cell] = SlateEditor.nodes(editor, {
-                    match: (n: any) => !SlateEditor.isEditor(n) && n.type === 'table-cell'
-                });
-
-                if (cell) {
-                    const [, cellPath] = cell;
-                    const end = SlateEditor.end(editor, cellPath);
-
-                    if (Point.equals(selection.anchor, end)) {
-                        return;
-                    }
-                }
-            }
-
-            deleteForward(unit);
-        };
-
-        editor.insertBreak = () => {
-            const { selection } = editor;
-
-            if (selection) {
-                const [table] = SlateEditor.nodes(editor, {
-                    match: (n: any) => !SlateEditor.isEditor(n) && n.type === 'table'
-                });
-
-                if (table) {
-                    return;
-                }
-            }
-
-            insertBreak();
-        };
-
-        return editor;
-    };
-
-    const withImages = (editor: SlateEditor) => {
-        const { isVoid } = editor;
-
-        editor.isVoid = (element: any) => {
-            return element.type === 'image' || element.type === 'image-center' || element.type === 'image-right' || element.type === 'image-left' ? true : isVoid(element);
-        };
-
-        return editor;
-    };
-
-    const defaultModalValues = {
-        tableClass: 'wysiwyg-table',
-        rowNumber: '',
-        colNumber: '',
-        textAlign: '',
-        linkUrl: '',
-        linkFontColor: '',
-        linkDesc: '',
-        youtubeUrl: '',
-        youtubeWidth: '',
-        youtubeHeight: '',
-        CTALeiras: '',
-        CTABgColor: '',
-        CTAFontColor: '',
-        CTAFunc: ''
-    };
-
-    const editor: any = useMemo(() => withImages(withTables(withInlines(withHistory(withReact(createEditor()))))), []);
-    Editor = useRef(editor);
-    const [fontSize, setFontSize] = useState('17px');
-    const [fontColor, setFontColor] = useState('#000000');
-    const [imageModal, setImageModal] = useState(false);
-    const [tableModal, setTableModal] = useState(false);
-    const [linkModal, setLinkModal] = useState(false);
-    const [youtubeModal, setYoutubeModal] = useState(false);
-    const [CTAModal, setCTAModal] = useState(false);
-    const [emojiModal, setEmojiModal] = useState(false);
-    const [image, setImage] = useState(defaultImage);
-    const [format, setFormat] = useState('');
-    const [modalValues, setModalvalues] = useState(defaultModalValues);
-    const [images] = useState([]);
 
     const toggleTableModal = (format?: any) => {
         setTableModal(!tableModal);

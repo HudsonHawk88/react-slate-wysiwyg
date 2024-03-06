@@ -195,25 +195,8 @@ export const getNode = (node: any, ch?: any) => {
         case 'table': {
             const style = `${getStilus(node.style)}` || '';
             const className = node.className || '';
-            return `<table class="${className}" style="${style}"><tbody>${children}</tbody></table>`;
-        }
-
-        case 'table-left': {
-            const style = `${getStilus(node.style)}` || '';
-            const className = node.className || '';
-            return `<table class="${className}" style="${style}"><tbody>${children}</tbody></table>`;
-        }
-
-        case 'table-center': {
-            const style = `${getStilus(node.style)}` || '';
-            const className = node.className || '';
-            return `<table class="${className}" style="${style}"><tbody>${children}</tbody></table>`;
-        }
-
-        case 'table-right': {
-            const style = `${getStilus(node.style)}` || '';
-            const className = node.className || '';
-            return `<table class="${className}" style="${style}"><tbody>${children}</tbody></table>`;
+            const c: string = getNode(node.children);
+            return `<table class="${className}" style="${style}"><tbody>${c}</tbody></table>`;
         }
 
         case 'table-row': {
