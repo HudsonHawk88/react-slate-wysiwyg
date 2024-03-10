@@ -853,14 +853,16 @@ export const Wysiwyg = ({
 
     // Put this at the start and end of an inline component to work around this Chromium bug:
     // https://bugs.chromium.org/p/chromium/issues/detail?id=1249405
-    const InlineChromiumBugfix = () => (
+    const InlineChromiumBugfix = (props: any) => (
         <span
             contentEditable={false}
             className={css`
                 font-size: 0;
             `}
+            {...props.attributes}
         >
-            {String.fromCodePoint(160) /* Non-breaking space */}
+            {/* {String.fromCodePoint(160) /* Non-breaking space */}
+            {props.children}
         </span>
     );
 
@@ -871,8 +873,8 @@ export const Wysiwyg = ({
         Object.assign(newStyle, { textDecoration: 'none' });
         return (
             <a {...attributes} href={element.url} style={newStyle}>
-                <InlineChromiumBugfix />
-                {element.linkText}
+                <InlineChromiumBugfix {...props} />
+                {element && element.linkText ? element.linkText : ''}
                 <InlineChromiumBugfix />
             </a>
         );
