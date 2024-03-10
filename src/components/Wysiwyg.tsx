@@ -1790,6 +1790,8 @@ export const Wysiwyg = ({
         }
     };
 
+    // console.log('VALUE, ', value);
+
     return (
         <React.Fragment>
             <Component

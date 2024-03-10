@@ -46,7 +46,11 @@ export const serialize = (nodes: CustomElement[] | Node[]) => {
                   const children =
                       node.children &&
                       node.children.map((nn: any): any => {
-                          if (Text.isText(nn) || (nn.style && nn.type !== 'button' && nn.style && nn.type !== 'table' && nn.style && nn.type !== 'table-row') || (nn.style && nn.emoji)) {
+                          if (
+                              Text.isText(nn) ||
+                              (nn.style && nn.type !== 'button' && nn.style && nn.type !== 'link' && nn.style && nn.type !== 'table' && nn.style && nn.type !== 'table-row') ||
+                              (nn.style && nn.emoji)
+                          ) {
                               let string = escapeHtml(nn.text);
                               if (nn.bold) {
                                   string = `<strong>${string}</strong>`;
