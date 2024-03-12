@@ -80,6 +80,7 @@ export interface WysiwygProps {
     placeholder?: string;
     uploadType?: 'pc' | 'link' | 'objectstore';
     onUpload?: onUploadType;
+    editorKey: string;
 }
 
 export interface FormatButtonProps {
