@@ -1150,7 +1150,7 @@ export const Wysiwyg = ({
         return leaf.emoji ? (
             <React.Fragment>{children}</React.Fragment>
         ) : (
-            <span style={isParentHeading(props) ? headingStyle : leaf.style} {...attributes} {...props}>
+            <span style={isParentHeading(props) ? headingStyle : style} {...attributes} {...props}>
                 {children}
             </span>
         );
