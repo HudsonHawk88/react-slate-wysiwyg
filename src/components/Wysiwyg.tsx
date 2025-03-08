@@ -1102,7 +1102,7 @@ export const Wysiwyg = ({
 
     const Leaf = (props: any) => {
         let { attributes, children, leaf } = props;
-        let style = leaf.style;
+        let style = JSON.parse(JSON.stringify(leaf.style));
         let headingStyle = {
             textAlign: style && style.textAlign ? style.textAlign : undefined
         };
