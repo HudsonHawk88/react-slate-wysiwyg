@@ -1086,6 +1086,7 @@ export const Wysiwyg = ({
 
     const isParentHeading = (props: any) => {
         const parent = props.children && props.children.props.parent && props.children.props.parent;
+
         if (parent) {
             if (parent.type === 'heading-1' || parent.type === 'heading-2' || parent.type === 'heading-3' || parent.type === 'heading-4' || parent.type === 'heading-5') {
                 return true;
@@ -1141,7 +1142,8 @@ export const Wysiwyg = ({
         //     );
         // }
 
-        if (isParentHeading(props) && style && style.fontSize) {
+        if (!isParentHeading(props) && style && style.fontSize) {
+            children.style;
             delete style.fontSize;
         }
 
@@ -1150,7 +1152,7 @@ export const Wysiwyg = ({
         return leaf.emoji ? (
             <React.Fragment>{children}</React.Fragment>
         ) : (
-            <span style={isParentHeading(props) ? headingStyle : style} {...attributes} {...props}>
+            <span style={!isParentHeading(props) ? headingStyle : style} {...attributes} {...props}>
                 {children}
             </span>
         );
