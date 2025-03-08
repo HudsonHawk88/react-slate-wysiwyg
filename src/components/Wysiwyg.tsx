@@ -543,6 +543,11 @@ export const Wysiwyg = ({
                     type: isActive ? 'align-left' : isList ? 'list-item' : format,
                     style: format.includes('heading') && parent && parent.type.includes('align') ? {} : { fontSize: '17px' }
                 };
+                if ((format + '').startsWith('heading')) {
+                    SlateEditor.addMark(editor, 'style', {});
+                } else {
+                    SlateEditor.addMark(editor, 'style', { fontSize: '17px' });
+                }
             }
 
             Transforms.setNodes<SlateElement>(editor, newProperties);
@@ -1085,10 +1090,17 @@ export const Wysiwyg = ({
     };
 
     const isParentHeading = (props: any) => {
-        const parent = props.children && props.children.props.parent && props.children.props.parent;
+        const { selection } = editor;
+        let p: any = undefined;
+        if (selection) {
+            p = SlateEditor.parent(editor, selection.focus?.path);
+        }
 
-        if (parent) {
-            if (parent.type === 'heading-1' || parent.type === 'heading-2' || parent.type === 'heading-3' || parent.type === 'heading-4' || parent.type === 'heading-5') {
+        // const parent = props.children && props.children.props.parent && props.children.props.parent;
+
+        if (p) {
+            const type = p[0].type;
+            if (type === 'heading-1' || type === 'heading-2' || type === 'heading-3' || type === 'heading-4' || type === 'heading-5') {
                 return true;
             } else {
                 return false;
@@ -1103,7 +1115,7 @@ export const Wysiwyg = ({
 
     const Leaf = (props: any) => {
         let { attributes, children, leaf } = props;
-        let style = JSON.parse(JSON.stringify(leaf.style));
+        let style = leaf && leaf.style ? JSON.parse(JSON.stringify(leaf.style)) : {};
         let headingStyle = {
             textAlign: style && style.textAlign ? style.textAlign : undefined
         };
@@ -1142,17 +1154,21 @@ export const Wysiwyg = ({
         //     );
         // }
 
-        if (isParentHeading(props) && style && style.fontSize) {
-            children.style;
-            delete style.fontSize;
-        }
+        // console.log('isParentHeading(props): ', isParentHeading(props));
 
-        // console.log(children);
+        const { selection } = editor;
+
+        if (isParentHeading(props) && style && selection) {
+            if (style.fontSize) {
+                delete style.fontSize;
+            }
+            // SlateEditor.addMark(editor, 'style', style);
+        }
 
         return leaf.emoji ? (
             <React.Fragment>{children}</React.Fragment>
         ) : (
-            <span style={isParentHeading(props) ? headingStyle : style} {...attributes} {...props}>
+            <span {...attributes} style={isParentHeading(props) ? headingStyle : style}>
                 {children}
             </span>
         );
