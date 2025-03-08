@@ -1141,8 +1141,8 @@ export const Wysiwyg = ({
         //     );
         // }
 
-        if (isParentHeading(props) && leaf.style && leaf.style.fontSize) {
-            delete leaf.style.fontSize;
+        if (isParentHeading(props) && style && style.fontSize) {
+            delete style.fontSize;
         }
 
         // console.log(children);
